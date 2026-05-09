@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carta Documento — Estudio Castro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f0ec;min-height:100vh;padding:20px}
+.container{max-width:960px;margin:0 auto}
+
+.app-header{background:#1a1a2e;color:#fff;padding:16px 24px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.app-header h1{font-size:16px;font-weight:500}
+.app-header .sub{font-size:12px;color:#aaa;margin-top:2px}
+.logo{font-size:13px;font-weight:700;letter-spacing:.1em;color:#7c9fc9}
+
+/* MODOS */
+.modos{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.modo{padding:12px 14px;border-radius:8px;border:1.5px solid #ddd;background:#fff;cursor:pointer;text-align:left;font-family:inherit;transition:all .15s}
+.modo.active{border-color:#1a5c8a;background:#eaf2fb}
+.modo .num{font-size:18px;font-weight:700;color:#ccc;margin-bottom:4px}
+.modo.active .num{color:#1a5c8a}
+.modo .tl{font-size:12px;font-weight:600;color:#222}
+.modo .ts{font-size:11px;color:#888;margin-top:2px;line-height:1.4}
+
+.aviso{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:14px;display:flex;gap:8px;line-height:1.5}
+.aviso-azul{background:#eaf2fb;border:1px solid #b5d4f4;color:#1a4a6e}
+.aviso-verde{background:#eaf3de;border:1px solid #c0dd97;color:#2a5010}
+.aviso-naranja{background:#fff8e6;border:1px solid #f0c060;color:#7a5500}
+
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.card h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #f0f0f0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:8px}
+.field label{font-size:11px;color:#666;display:block;margin-bottom:3px;font-weight:500}
+.field input,.field select{width:100%;font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid #d0d0d0;background:#fafafa;color:#222;font-family:inherit;transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:#1a5c8a;background:#fff}
+.field-row{display:grid;grid-template-columns:1fr 90px;gap:8px}
+.field-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.field textarea{width:100%;font-size:13px;padding:8px 10px;border-radius:6px;border:1px solid #d0d0d0;background:#fafafa;color:#222;font-family:inherit;resize:vertical;min-height:60px}
+.field textarea:focus{outline:none;border-color:#1a5c8a;background:#fff}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid #d0d0d0;background:#f8f8f8;cursor:pointer;color:#555;font-family:inherit;transition:all .15s}
+.chip:hover{border-color:#1a5c8a;color:#1a5c8a}
+.chip.active{background:#1a5c8a;border-color:#1a5c8a;color:#fff;font-weight:600}
+
+/* TOOLBAR */
+.toolbar{display:flex;flex-wrap:wrap;gap:3px;padding:7px 8px;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:8px 8px 0 0;border-bottom:none;align-items:center}
+.tg{display:flex;gap:2px;align-items:center;padding-right:7px;margin-right:4px;border-right:1px solid #e0e0e0}
+.tg:last-child{border-right:none;padding-right:0}
+.tb{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:5px;border:1px solid transparent;background:transparent;cursor:pointer;font-size:12px;font-weight:600;color:#555;font-family:inherit;transition:all .1s}
+.tb:hover{background:#fff;border-color:#d0d0d0;color:#222}
+.tb-sel{font-size:11px;padding:3px 5px;border-radius:5px;border:1px solid #d0d0d0;background:#fff;color:#333;font-family:inherit;cursor:pointer;height:28px}
+.sel-font{width:140px}
+.sel-size{width:62px}
+.sel-lh{width:88px}
+
+.editor-wrap{border:1px solid #e0e0e0;border-radius:0 0 8px 8px;background:#fff}
+.editor{min-height:160px;padding:12px 14px;font-size:12pt;line-height:1.6;color:#222;outline:none;font-family:'Times New Roman',serif}
+.wcount{font-size:11px;color:#999;text-align:right;padding:3px 6px;background:#fafafa;border-top:1px solid #f0f0f0}
+
+/* PANEL MODO 1 - Texto para copiar */
+.texto-resultado{background:#fafaf8;border:1px solid #e0ddd5;border-radius:8px;padding:16px;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.8;white-space:pre-wrap;min-height:200px;color:#222;margin-bottom:10px}
+
+/* BTNS */
+.btns-row{display:grid;gap:10px;margin-bottom:20px}
+.btns-3{grid-template-columns:1fr 1fr 1fr}
+.btns-2{grid-template-columns:1fr 1fr}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;border-radius:8px;border:1.5px solid #d0d0d0;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:#333;font-family:inherit;transition:all .15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.btn-primary{background:#1a5c8a;border-color:#1a5c8a;color:#fff}
+.btn-primary:hover{background:#134a72}
+.btn-green{background:#2a6e10;border-color:#2a6e10;color:#fff}
+.btn-green:hover{background:#205010}
+.btn-red{border-color:#e0a0a0}
+.btn-red:hover{background:#fff8f8;border-color:#c04040;color:#c04040}
+
+.fecha-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.fecha-row label{font-size:12px;color:#666;font-weight:500}
+.fecha-row input{font-size:13px;padding:7px 10px;border-radius:6px;border:1px solid #d0d0d0;background:#fafafa;color:#222;font-family:inherit}
+
+/* ========== PRINT MODE 3 — sobre formulario físico ========== */
+@media print{
+  body{background:#fff;margin:0;padding:0}
+  .container,.app-header,.modos,.aviso,.card,.fecha-row,.btns-row{display:none!important}
+  #print-overlay{display:block!important}
+}
+
+#print-overlay{display:none}
+.print-page{
+  width:21.6cm;
+  min-height:35.5cm;
+  padding:0;
+  margin:0;
+  font-family:'Times New Roman',serif;
+  font-size:10pt;
+  color:#000;
+  position:relative;
+}
+/* Campos posicionados exactamente sobre el formulario físico */
+/* Ajustá los valores top/left si tu impresora tiene offset */
+.pf{position:absolute;font-size:10pt;color:#000;font-weight:bold}
+.pf-rem-nombre{top:2.7cm;left:.8cm;width:8cm}
+.pf-rem-dni{top:3.5cm;left:.8cm;width:3.5cm}
+.pf-rem-dom{top:4.3cm;left:.8cm;width:8cm}
+.pf-rem-loc{top:5.0cm;left:.8cm;width:5cm}
+.pf-rem-prov{top:5.0cm;left:6.2cm;width:3.5cm}
+.pf-rem-cp{top:3.5cm;left:5.2cm;width:2.5cm}
+.pf-dest-nombre{top:2.7cm;left:11.2cm;width:9.5cm}
+.pf-dest-cuit{top:3.5cm;left:11.2cm;width:4.5cm}
+.pf-dest-dom{top:4.3cm;left:11.2cm;width:9.5cm}
+.pf-dest-loc{top:5.0cm;left:11.2cm;width:5.5cm}
+.pf-dest-prov{top:5.0cm;left:17.2cm;width:3.5cm}
+.pf-dest-cp{top:3.5cm;left:16.5cm;width:2.5cm}
+.pf-texto{top:7.2cm;left:.8cm;width:19.8cm;font-size:10pt;line-height:1.7;font-weight:normal}
+.pf-fecha{top:31.5cm;left:.8cm;width:5cm}
+
+.calibracion-nota{background:#fff8e6;border:1px solid #f0c060;border-radius:6px;padding:10px 14px;font-size:12px;color:#7a5500;margin-bottom:12px}
+.calibracion-nota strong{display:block;margin-bottom:4px}
+.calibracion-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.cal-field{display:flex;align-items:center;gap:6px;font-size:12px}
+.cal-field label{width:120px;color:#666}
+.cal-field input{width:70px;padding:4px 6px;border:1px solid #d0d0d0;border-radius:4px;font-size:12px;font-family:inherit}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="app-header">
+    <div>
+      <h1>Carta Documento — Correo Argentino</h1>
+      <div class="sub">Estudio Castro — Dr. Javier Horacio Castro — T° 102 F° 174 CPACF</div>
+    </div>
+    <div class="logo">ESTUDIO CASTRO</div>
+  </div>
+
+  <div class="modos">
+    <button class="modo active" onclick="setModo(1,this)">
+      <div class="num">1</div>
+      <div class="tl">Texto para copiar</div>
+      <div class="ts">El actor copia el texto en el formulario físico comprado en el Correo</div>
+    </button>
+    <button class="modo" onclick="setModo(2,this)">
+      <div class="num">2</div>
+      <div class="tl">SIE Online</div>
+      <div class="ts">Copiá el texto y pegalo en sie.correoargentino.com.ar</div>
+    </button>
+    <button class="modo" onclick="setModo(3,this)">
+      <div class="num">3</div>
+      <div class="tl">Imprimir sobre formulario</div>
+      <div class="ts">Insertá el formulario en la impresora e imprimí directo sobre él</div>
+    </button>
+  </div>
+
+  <div id="aviso-modo"></div>
+
+  <!-- DATOS COMUNES -->
+  <div class="grid2">
+    <div class="card">
+      <h3>Remitente — Actor / Trabajador</h3>
+      <div class="field"><label>Apellido y nombre</label><input id="rem-nombre" type="text" placeholder="RODRIGUEZ MAXIMILIANO DANIEL" oninput="actualizar()"/></div>
+      <div class="field field-row">
+        <div><label>DNI Nº</label><input id="rem-dni" type="text" placeholder="31.380.073" oninput="actualizar()"/></div>
+        <div><label>Cód. Postal</label><input id="rem-cp" type="text" placeholder="CP" oninput="actualizar()"/></div>
+      </div>
+      <div class="field"><label>Domicilio real</label><input id="rem-dom" type="text" placeholder="Calle y número" oninput="actualizar()"/></div>
+      <div class="field field-row2">
+        <div><label>Localidad</label><input id="rem-loc" type="text" placeholder="Ciudad" oninput="actualizar()"/></div>
+        <div><label>Provincia</label><input id="rem-prov" type="text" placeholder="Provincia" oninput="actualizar()"/></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Destinatario — Empleador</h3>
+      <div class="field"><label>Apellido y nombre o razón social</label><input id="dest-nombre" type="text" placeholder="HOLCIM ARGENTINA S.A." oninput="actualizar()"/></div>
+      <div class="field field-row">
+        <div><label>CUIT</label><input id="dest-cuit" type="text" placeholder="30-XXXXXXXX-X" oninput="actualizar()"/></div>
+        <div><label>Cód. Postal</label><input id="dest-cp" type="text" placeholder="CP" oninput="actualizar()"/></div>
+      </div>
+      <div class="field"><label>Domicilio</label><input id="dest-dom" type="text" placeholder="Calle y número" oninput="actualizar()"/></div>
+      <div class="field field-row2">
+        <div><label>Localidad</label><input id="dest-loc" type="text" placeholder="Ciudad" oninput="actualizar()"/></div>
+        <div><label>Provincia</label><input id="dest-prov" type="text" placeholder="Provincia" oninput="actualizar()"/></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEXTO -->
+  <div class="card">
+    <h3>Texto de la carta documento</h3>
+    <div class="chips">
+      <button class="chip" onclick="insertarTexto(this,'despido')">Despido injustificado</button>
+      <button class="chip" onclick="insertarTexto(this,'indirecto')">Despido indirecto</button>
+      <button class="chip" onclick="insertarTexto(this,'registracion')">Intimar registración</button>
+      <button class="chip" onclick="insertarTexto(this,'haberes')">Reclamo haberes</button>
+      <button class="chip" onclick="insertarTexto(this,'vacaciones')">Reclamo vacaciones</button>
+      <button class="chip" onclick="insertarTexto(this,'sac')">Reclamo SAC</button>
+      <button class="chip" onclick="insertarTexto(this,'liquidacion')">Liquidación final</button>
+      <button class="chip" onclick="insertarTexto(this,'certificados')">Certificados art. 80</button>
+      <button class="chip" onclick="insertarTexto(this,'ley25323')">Ley 25.323 doble</button>
+      <button class="chip" onclick="insertarTexto(this,'art15')">Art. 15 Ley 24.013</button>
+    </div>
+    <div class="toolbar">
+      <div class="tg">
+        <select class="tb-sel sel-font" onchange="fmt('fontName',this.value)">
+          <option value="Times New Roman" selected>Times New Roman</option>
+          <option value="Arial">Arial</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Georgia">Georgia</option>
+        </select>
+      </div>
+      <div class="tg">
+        <select class="tb-sel sel-size" onchange="fmt('fontSize',this.value)">
+          <option value="1">8pt</option>
+          <option value="2">10pt</option>
+          <option value="3" selected>12pt</option>
+          <option value="4">14pt</option>
+          <option value="5">18pt</option>
+          <option value="6">24pt</option>
+        </select>
+      </div>
+      <div class="tg">
+        <button class="tb" onclick="fmt('bold')" title="Negrita"><b>N</b></button>
+        <button class="tb" onclick="fmt('italic')" title="Cursiva"><i>K</i></button>
+        <button class="tb" onclick="fmt('underline')" title="Subrayado"><u>S</u></button>
+        <button class="tb" onclick="fmt('strikeThrough')" title="Tachado"><s>T</s></button>
+      </div>
+      <div class="tg">
+        <button class="tb" onclick="fmt('justifyLeft')" title="Izquierda">⬛←</button>
+        <button class="tb" onclick="fmt('justifyCenter')" title="Centrar">⬛↔</button>
+        <button class="tb" onclick="fmt('justifyRight')" title="Derecha">⬛→</button>
+        <button class="tb" onclick="fmt('justifyFull')" title="Justificar">≡</button>
+      </div>
+      <div class="tg">
+        <select class="tb-sel sel-lh" onchange="setLH(this.value)">
+          <option value="1.3">Simple</option>
+          <option value="1.6" selected>1.5 líneas</option>
+          <option value="2">Doble</option>
+          <option value="3">Triple</option>
+        </select>
+      </div>
+      <div class="tg">
+        <button class="tb" onclick="fmt('removeFormat')" title="Limpiar">✕f</button>
+        <button class="tb" onclick="limpiarEditor()" title="Borrar todo" style="color:#c04040">🗑</button>
+      </div>
+    </div>
+    <div class="editor-wrap">
+      <div class="editor" id="editor" contenteditable="true" spellcheck="true" oninput="actualizar()"></div>
+    </div>
+    <div class="wcount" id="wcount">0 palabras</div>
+  </div>
+
+  <div class="fecha-row">
+    <label>Fecha:</label>
+    <input type="date" id="fecha" onchange="actualizar()"/>
+  </div>
+
+  <!-- MODO 1: Texto para copiar -->
+  <div id="panel-modo1">
+    <div class="aviso aviso-azul">✏️ <div>El actor copia este texto a mano o a máquina en el formulario oficial comprado en la sucursal del Correo Argentino.</div></div>
+    <div class="card">
+      <h3>Texto generado — listo para copiar</h3>
+      <div class="texto-resultado" id="texto-resultado">Completá los datos arriba para ver el texto...</div>
+    </div>
+    <div class="btns-row btns-2">
+      <button class="btn" onclick="copiarTexto()">📋 Copiar texto al portapapeles</button>
+      <button class="btn btn-red" onclick="limpiarTodo()">🗑 Limpiar formulario</button>
+    </div>
+  </div>
+
+  <!-- MODO 2: SIE Online -->
+  <div id="panel-modo2" style="display:none">
+    <div class="aviso aviso-verde">🌐 <div>El actor ingresa a <strong>sie.correoargentino.com.ar</strong> con su cuenta, carga los datos del destinatario y pega el texto abajo en el campo de mensaje.</div></div>
+    <div class="card">
+      <h3>Solo el texto del mensaje — para pegar en el SIE</h3>
+      <div class="texto-resultado" id="texto-sie">Completá los datos arriba...</div>
+    </div>
+    <div class="btns-row btns-2">
+      <button class="btn btn-primary" onclick="copiarSIE()">📋 Copiar solo el texto del mensaje</button>
+      <button class="btn" onclick="abrirSIE()">🌐 Abrir SIE Online</button>
+    </div>
+  </div>
+
+  <!-- MODO 3: Imprimir sobre formulario físico -->
+  <div id="panel-modo3" style="display:none">
+    <div class="aviso aviso-naranja">🖨️ <div><strong>Cómo usar:</strong> Insertá el formulario físico del Correo Argentino en la impresora. Ajustá las posiciones si es necesario (cada impresora puede tener un pequeño offset). Luego hacé clic en Imprimir.</div></div>
+
+    <div class="card">
+      <h3>Calibración de posición (ajustá si los campos no coinciden)</h3>
+      <div style="font-size:12px;color:#666;margin-bottom:8px">Si el texto no cae exactamente en los campos, ajustá los milímetros de desplazamiento:</div>
+      <div class="calibracion-grid">
+        <div class="cal-field"><label>Desplazamiento ↕ vertical (mm)</label><input type="number" id="cal-top" value="0" step="1" onchange="aplicarCalibracion()"/></div>
+        <div class="cal-field"><label>Desplazamiento ↔ horizontal (mm)</label><input type="number" id="cal-left" value="0" step="1" onchange="aplicarCalibracion()"/></div>
+      </div>
+    </div>
+
+    <div class="btns-row btns-2">
+      <button class="btn btn-primary" onclick="imprimirFormulario()">🖨️ Imprimir sobre formulario físico</button>
+      <button class="btn btn-red" onclick="limpiarTodo()">🗑 Limpiar</button>
+    </div>
+  </div>
+
+</div><!-- fin container -->
+
+<!-- OVERLAY DE IMPRESIÓN — sobre formulario físico -->
+<div id="print-overlay">
+  <div class="print-page" id="print-page">
+    <div class="pf pf-rem-nombre" id="pf-rem-nombre"></div>
+    <div class="pf pf-rem-dni" id="pf-rem-dni"></div>
+    <div class="pf pf-rem-cp" id="pf-rem-cp"></div>
+    <div class="pf pf-rem-dom" id="pf-rem-dom"></div>
+    <div class="pf pf-rem-loc" id="pf-rem-loc"></div>
+    <div class="pf pf-rem-prov" id="pf-rem-prov"></div>
+    <div class="pf pf-dest-nombre" id="pf-dest-nombre"></div>
+    <div class="pf pf-dest-cuit" id="pf-dest-cuit"></div>
+    <div class="pf pf-dest-cp" id="pf-dest-cp"></div>
+    <div class="pf pf-dest-dom" id="pf-dest-dom"></div>
+    <div class="pf pf-dest-loc" id="pf-dest-loc"></div>
+    <div class="pf pf-dest-prov" id="pf-dest-prov"></div>
+    <div class="pf pf-texto" id="pf-texto"></div>
+    <div class="pf pf-fecha" id="pf-fecha"></div>
+  </div>
+</div>
+
+<script>
+let modoActual = 1;
+
+const textosMotivo = {
+  despido: 'Por medio de la presente, intimo a Ud. en el plazo de 72 horas al pago de las indemnizaciones correspondientes al despido sin justa causa del que fui objeto con fecha [FECHA DE DESPIDO], conforme lo establecido por los arts. 232, 233 y 245 de la Ley de Contrato de Trabajo, bajo apercibimiento de aplicar la multa prevista en el art. 2° de la Ley 25.323.',
+  indirecto: 'Ante las graves injurias laborales sufridas que tornan insostenible la prosecución del vínculo laboral, y en ejercicio del derecho que me confiere el art. 246 de la LCT, me considero despedido con justa causa por exclusiva culpa de la patronal. Intimo a Ud. en el plazo de 72 horas al pago de las indemnizaciones por antigüedad (art. 245 LCT), sustitutiva de preaviso (art. 232 LCT) e integración del mes de despido (art. 233 LCT), bajo apercibimiento del art. 2° Ley 25.323.',
+  registracion: 'Intimo a Ud. en el plazo de 72 horas a proceder a la correcta registración de la relación laboral que nos vincula, consignando la real fecha de ingreso, la verdadera remuneración percibida y la categoría laboral que me corresponde, bajo apercibimiento de las multas previstas en los arts. 8°, 9° y 10° de la Ley 24.013 y art. 1° de la Ley 25.323.',
+  haberes: 'Intimo a Ud. en el plazo de 72 horas al pago de los haberes adeudados correspondientes al período [INDICAR PERÍODO], bajo apercibimiento de las sanciones previstas en el art. 2° de la Ley 25.323 y demás normas aplicables.',
+  vacaciones: 'Intimo a Ud. en el plazo de 72 horas al pago de las vacaciones no gozadas y proporcionales que me corresponden conforme lo dispuesto por los arts. 150 y 156 de la LCT, bajo apercibimiento de iniciar las acciones legales pertinentes.',
+  sac: 'Intimo a Ud. en el plazo de 72 horas al pago del Sueldo Anual Complementario adeudado y su parte proporcional correspondiente al período [INDICAR PERÍODO], conforme lo dispuesto por el art. 122 de la LCT.',
+  liquidacion: 'Intimo a Ud. en el plazo de 72 horas al pago de la liquidación final adeudada, comprensiva de todos los rubros remunerativos e indemnizatorios que corresponden a la extinción del vínculo laboral, incluyendo haberes, SAC proporcional, vacaciones no gozadas, preaviso, integración del mes de despido e indemnización por antigüedad, bajo apercibimiento de las sanciones del art. 2° Ley 25.323.',
+  certificados: 'Intimo a Ud. en el plazo de 72 horas a hacer entrega de los certificados de trabajo y de servicios y remuneraciones previstos en el art. 80 de la LCT, bajo apercibimiento de las sanciones legales establecidas en dicha norma.',
+  ley25323: 'Habiendo transcurrido el plazo legal sin que Ud. procediera al pago de las indemnizaciones adeudadas, intimo a Ud. fehacientemente en los términos del art. 2° de la Ley 25.323, a los efectos de hacer efectivo el incremento del 50% sobre los rubros indemnizatorios correspondientes, bajo apercibimiento de iniciar las acciones judiciales pertinentes.',
+  art15: 'En cumplimiento de lo dispuesto por el art. 15 de la Ley 24.013, intimo a Ud. en el plazo de 24 horas a proceder a la regularización de la relación laboral ante la AFIP, bajo apercibimiento de las multas previstas en dicha norma.'
+};
+
+function setModo(n, btn) {
+  modoActual = n;
+  document.querySelectorAll('.modo').forEach(m => m.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-modo1').style.display = n === 1 ? 'block' : 'none';
+  document.getElementById('panel-modo2').style.display = n === 2 ? 'block' : 'none';
+  document.getElementById('panel-modo3').style.display = n === 3 ? 'block' : 'none';
+  actualizar();
+}
+
+function fmt(cmd, val) {
+  document.getElementById('editor').focus();
+  document.execCommand(cmd, false, val || null);
+  actualizar();
+}
+
+function setLH(v) {
+  document.getElementById('editor').style.lineHeight = v;
+}
+
+function insertarTexto(btn, motivo) {
+  btn.classList.toggle('active');
+  const ed = document.getElementById('editor');
+  ed.focus();
+  const txt = textosMotivo[motivo] || '';
+  if (btn.classList.contains('active')) {
+    const br = ed.innerHTML ? '<br><br>' : '';
+    document.execCommand('insertHTML', false, br + txt);
+  }
+  actualizar();
+}
+
+function limpiarEditor() {
+  if (confirm('¿Borrar el texto del editor?')) {
+    document.getElementById('editor').innerHTML = '';
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    actualizar();
+  }
+}
+
+function gv(id) { return document.getElementById(id).value || ''; }
+
+function getFecha() {
+  const f = gv('fecha');
+  if (!f) return '';
+  return new Date(f + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function getTextoEditor() {
+  return document.getElementById('editor').innerText.trim();
+}
+
+function actualizar() {
+  const txt = getTextoEditor();
+  const n = txt ? txt.split(/\s+/).length : 0;
+  document.getElementById('wcount').textContent = n + ' palabras';
+
+  const remNombre = gv('rem-nombre').toUpperCase() || 'NOMBRE DEL ACTOR';
+  const remDni = gv('rem-dni') || 'DNI';
+  const remCp = gv('rem-cp');
+  const remDom = gv('rem-dom') || 'Domicilio';
+  const remLoc = gv('rem-loc') || 'Localidad';
+  const remProv = gv('rem-prov') || 'Provincia';
+  const destNombre = gv('dest-nombre').toUpperCase() || 'RAZÓN SOCIAL DEL EMPLEADOR';
+  const destCuit = gv('dest-cuit') || 'CUIT';
+  const destCp = gv('dest-cp');
+  const destDom = gv('dest-dom') || 'Domicilio';
+  const destLoc = gv('dest-loc') || 'Localidad';
+  const destProv = gv('dest-prov') || 'Provincia';
+  const fecha = getFecha();
+
+  // MODO 1 — texto completo para copiar
+  const textoCompleto =
+`Buenos Aires, ${fecha || '[FECHA]'}
+
+Señores:
+${destNombre}
+CUIT: ${destCuit}
+${destDom} — ${destLoc}, ${destProv} ${destCp ? '(CP ' + destCp + ')' : ''}
+
+De mi mayor consideración:
+
+Me dirijo a Uds. en mi carácter de trabajador dependiente, a efectos de notificarles fehacientemente lo siguiente:
+
+${txt || '[Completá el texto de la carta documento]'}
+
+Sin otro particular, saludo a Uds. atentamente.
+
+
+${remNombre}
+DNI: ${remDni}
+${remDom} — ${remLoc}, ${remProv} ${remCp ? '(CP ' + remCp + ')' : ''}`;
+
+  document.getElementById('texto-resultado').textContent = textoCompleto;
+  document.getElementById('texto-sie').textContent = txt || '[Completá el texto del mensaje]';
+
+  // MODO 3 — overlay de impresión
+  document.getElementById('pf-rem-nombre').textContent = remNombre;
+  document.getElementById('pf-rem-dni').textContent = remDni;
+  document.getElementById('pf-rem-cp').textContent = remCp;
+  document.getElementById('pf-rem-dom').textContent = remDom;
+  document.getElementById('pf-rem-loc').textContent = remLoc;
+  document.getElementById('pf-rem-prov').textContent = remProv;
+  document.getElementById('pf-dest-nombre').textContent = destNombre;
+  document.getElementById('pf-dest-cuit').textContent = destCuit;
+  document.getElementById('pf-dest-cp').textContent = destCp;
+  document.getElementById('pf-dest-dom').textContent = destDom;
+  document.getElementById('pf-dest-loc').textContent = destLoc;
+  document.getElementById('pf-dest-prov').textContent = destProv;
+  document.getElementById('pf-texto').innerHTML = document.getElementById('editor').innerHTML || '';
+  document.getElementById('pf-fecha').textContent = fecha;
+}
+
+function aplicarCalibracion() {
+  const top = parseFloat(document.getElementById('cal-top').value) || 0;
+  const left = parseFloat(document.getElementById('cal-left').value) || 0;
+  const page = document.getElementById('print-page');
+  page.style.marginTop = top + 'mm';
+  page.style.marginLeft = left + 'mm';
+}
+
+function imprimirFormulario() {
+  actualizar();
+  window.print();
+}
+
+function copiarTexto() {
+  const txt = document.getElementById('texto-resultado').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    alert('✅ Texto copiado. Podés pegarlo donde necesites.');
+  }).catch(() => {
+    alert('Seleccioná el texto manualmente y copiá con Ctrl+C');
+  });
+}
+
+function copiarSIE() {
+  const txt = document.getElementById('texto-sie').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    alert('✅ Texto copiado. Pegalo en el campo de mensaje del SIE.');
+  }).catch(() => alert('Copiá el texto manualmente'));
+}
+
+function abrirSIE() {
+  window.open('https://sie.correoargentino.com.ar', '_blank');
+}
+
+function limpiarTodo() {
+  if (!confirm('¿Limpiar todos los datos del formulario?')) return;
+  ['rem-nombre','rem-dni','rem-cp','rem-dom','rem-loc','rem-prov',
+   'dest-nombre','dest-cuit','dest-cp','dest-dom','dest-loc','dest-prov'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('editor').innerHTML = '';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  actualizar();
+}
+
+// Fecha de hoy
+document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+actualizar();
+</script>
+
+</body>
+</html>

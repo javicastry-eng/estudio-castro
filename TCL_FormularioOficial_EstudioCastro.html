@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCL — Telegrama Laboral Ley 23.789 — Estudio Castro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;min-height:100vh;padding:20px}
+.container{max-width:900px;margin:0 auto}
+
+/* ENCABEZADO */
+.app-header{background:#1a1a2e;color:#fff;padding:16px 24px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.app-header h1{font-size:16px;font-weight:500;letter-spacing:.02em}
+.app-header .sub{font-size:12px;color:#aaa;margin-top:2px}
+.logo-text{font-size:13px;font-weight:700;letter-spacing:.1em;color:#7c9fc9}
+
+/* TABS */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.tab{padding:12px 16px;border-radius:8px;border:1.5px solid #ddd;background:#fff;cursor:pointer;text-align:left;font-family:inherit}
+.tab.active{border-color:#2c5f8a;background:#eaf2fb}
+.tab .tl{font-size:13px;font-weight:600;color:#1a1a2e}
+.tab .ts{font-size:11px;color:#888;margin-top:3px}
+
+/* CARDS */
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.card h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #f0f0f0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:8px}
+.field label{font-size:11px;color:#666;display:block;margin-bottom:3px;font-weight:500}
+.field input{width:100%;font-size:13px;padding:7px 10px;border-radius:6px;border:1px solid #d0d0d0;background:#fafafa;color:#222;font-family:inherit;transition:border-color .15s}
+.field input:focus{outline:none;border-color:#2c5f8a;background:#fff}
+.field-row{display:grid;grid-template-columns:1fr 90px;gap:8px}
+.field-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* TIPO */
+.tipo-checks{display:flex;gap:20px;flex-wrap:wrap}
+.tipo-check{display:flex;align-items:center;gap:7px;font-size:13px;color:#333;cursor:pointer}
+.tipo-check input[type=radio]{accent-color:#2c5f8a;width:15px;height:15px}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid #d0d0d0;background:#f8f8f8;cursor:pointer;color:#555;font-family:inherit;transition:all .15s}
+.chip:hover{border-color:#2c5f8a;color:#2c5f8a}
+.chip.active{background:#2c5f8a;border-color:#2c5f8a;color:#fff;font-weight:600}
+
+/* TOOLBAR */
+.toolbar{display:flex;flex-wrap:wrap;gap:3px;padding:8px 10px;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:8px 8px 0 0;border-bottom:none;align-items:center}
+.tg{display:flex;gap:2px;align-items:center;padding-right:8px;margin-right:4px;border-right:1px solid #e0e0e0}
+.tg:last-child{border-right:none;padding-right:0}
+.tb{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:5px;border:1px solid transparent;background:transparent;cursor:pointer;font-size:13px;font-weight:600;color:#555;font-family:inherit;transition:all .1s}
+.tb:hover{background:#fff;border-color:#d0d0d0;color:#222}
+.tb:active{transform:scale(.95)}
+.tb-sel{font-size:12px;padding:4px 6px;border-radius:5px;border:1px solid #d0d0d0;background:#fff;color:#333;font-family:inherit;cursor:pointer;height:30px}
+.sel-font{width:140px}
+.sel-size{width:68px}
+.sel-lh{width:88px}
+
+/* EDITOR */
+.editor-wrap{border:1px solid #e0e0e0;border-radius:0 0 8px 8px;background:#fff}
+.editor{min-height:130px;padding:12px 14px;font-size:12pt;line-height:1.6;color:#222;outline:none;font-family:'Times New Roman',serif}
+.wcount{font-size:11px;color:#999;text-align:right;padding:4px 6px;background:#fafafa;border-top:1px solid #f0f0f0;border-radius:0 0 8px 8px}
+
+/* FECHA */
+.fecha-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.fecha-row label{font-size:12px;color:#666;font-weight:500}
+.fecha-row input{font-size:13px;padding:7px 10px;border-radius:6px;border:1px solid #d0d0d0;background:#fafafa;color:#222;font-family:inherit}
+.fecha-row input:focus{outline:none;border-color:#2c5f8a}
+
+/* BOTONES */
+.btns-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px;border-radius:8px;border:1.5px solid #d0d0d0;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:#333;font-family:inherit;transition:all .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn-print{background:#2c5f8a;border-color:#2c5f8a;color:#fff}
+.btn-print:hover{background:#1f4a6e}
+.btn-word{background:#1a5c1a;border-color:#1a5c1a;color:#fff}
+.btn-word:hover{background:#134713}
+.btn-limpiar{border-color:#e0e0e0}
+.btn-limpiar:hover{background:#fff8f8;border-color:#e07070;color:#c04040}
+
+/* AVISO */
+.aviso{background:#fff8e6;border:1px solid #f0c060;border-radius:8px;padding:10px 14px;font-size:12px;color:#7a5500;margin-bottom:14px;display:flex;gap:8px;line-height:1.5}
+
+/* ====== FORMULARIO IMPRIMIBLE ====== */
+@media print{
+  body{background:#fff;padding:0}
+  .container{max-width:100%}
+  .app-header,.tabs,.card,.fecha-row,.btns-row,.aviso{display:none!important}
+  #form-print{display:block!important}
+}
+
+#form-print{display:none}
+
+.fp{font-family:Arial,sans-serif;font-size:9.5pt;color:#000;padding:8mm;width:100%}
+.fp-header{display:flex;align-items:stretch;border:2px solid #000;margin-bottom:0}
+.fp-header-left{padding:6px 10px;border-right:1px solid #000;font-size:7pt;line-height:1.5;min-width:120px}
+.fp-header-center{flex:1;text-align:center;padding:10px;display:flex;align-items:center;justify-content:center}
+.fp-header-center h2{font-size:14pt;font-weight:bold;margin:0}
+.fp-header-right{padding:6px 10px;border-left:1px solid #000;font-size:7pt;line-height:1.5;min-width:100px;text-align:right}
+.fp-body{border:2px solid #000;border-top:none}
+.fp-cols{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #000}
+.fp-col{padding:6px 10px}
+.fp-col:first-child{border-right:1px solid #000}
+.fp-col-title{font-size:8.5pt;font-weight:bold;text-transform:uppercase;text-align:center;padding-bottom:4px;border-bottom:1px solid #999;margin-bottom:6px;letter-spacing:.05em}
+.fp-f{margin-bottom:5px;min-height:20px;border-bottom:.5px solid #ccc;padding-bottom:2px}
+.fp-fl{font-size:6.5pt;color:#555;margin-bottom:1px}
+.fp-fv{font-size:9.5pt;font-weight:bold;min-height:14px}
+.fp-fr{display:grid;grid-template-columns:3fr 1fr;gap:6px}
+.fp-fr2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fp-tipo{padding:7px 10px;border-bottom:1px solid #000;display:flex;gap:24px;align-items:center;font-size:8pt}
+.fp-tipo strong{margin-right:4px}
+.fp-chk-row{display:flex;align-items:center;gap:4px}
+.fp-chk{width:11px;height:11px;border:1px solid #000;display:inline-flex;align-items:center;justify-content:center;font-size:9pt;font-weight:bold}
+.fp-texto-section{padding:8px 10px;border-bottom:1px solid #000;min-height:160px}
+.fp-texto-label{font-size:7pt;color:#555;font-weight:bold;margin-bottom:6px}
+.fp-texto-content{font-size:10pt;line-height:1.7}
+.fp-lineas{margin-top:6px}
+.fp-linea{border-bottom:.5px solid #bbb;min-height:18px;margin-bottom:2px}
+.fp-bottom{display:grid;grid-template-columns:1fr 1fr;padding:8px 10px;gap:10px;border-bottom:1px solid #000}
+.fp-bottom-label{font-size:7pt;color:#555;margin-bottom:3px}
+.fp-bottom-val{font-size:9.5pt;font-weight:bold}
+.fp-firma-box{border-top:1px solid #000;min-height:40px;margin-top:30px;padding-top:4px;font-size:7pt;color:#555}
+.fp-nota{font-size:7pt;color:#555;padding:5px 10px;font-style:italic}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="app-header">
+    <div>
+      <h1>TCL / Carta Documento — Ley 23.789</h1>
+      <div class="sub">Estudio Castro — Dr. Javier Horacio Castro — T° 102 F° 174 CPACF</div>
+    </div>
+    <div class="logo-text">ESTUDIO CASTRO</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-30" onclick="setTipo('30')">
+      <div class="tl">TCL hasta 30 palabras</div>
+      <div class="ts">Formulario oficial Correo Argentino — gratuito</div>
+    </button>
+    <button class="tab" id="tab-mas30" onclick="setTipo('mas30')">
+      <div class="tl">TCL más de 30 palabras</div>
+      <div class="ts">Con espacio extendido de escritura</div>
+    </button>
+  </div>
+
+  <div class="aviso">
+    ⚠️ <div>Completá todos los campos → hacé clic en <strong>Imprimir formulario</strong> → firmás → presentás en cualquier sucursal del Correo Argentino con tu DNI.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Destinatario — Empleador</h3>
+      <div class="field"><label>Apellido y nombre o razón social</label><input id="dest-nombre" type="text" placeholder="Ej: HOLCIM ARGENTINA S.A." oninput="sync()"/></div>
+      <div class="field"><label>Ramo o actividad principal</label><input id="dest-ramo" type="text" placeholder="Ej: Fabricación de cemento" oninput="sync()"/></div>
+      <div class="field field-row">
+        <div><label>Domicilio laboral</label><input id="dest-dom" type="text" placeholder="Calle y número" oninput="sync()"/></div>
+        <div><label>Cód. Postal</label><input id="dest-cp" type="text" placeholder="CP" oninput="sync()"/></div>
+      </div>
+      <div class="field field-row2">
+        <div><label>Localidad</label><input id="dest-loc" type="text" placeholder="Ciudad" oninput="sync()"/></div>
+        <div><label>Provincia</label><input id="dest-prov" type="text" placeholder="Provincia" oninput="sync()"/></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Remitente — Trabajador</h3>
+      <div class="field"><label>Apellido y nombre</label><input id="rem-nombre" type="text" placeholder="Ej: RODRIGUEZ MAXIMILIANO DANIEL" oninput="sync()"/></div>
+      <div class="field field-row">
+        <div><label>DNI Nº</label><input id="rem-dni" type="text" placeholder="Ej: 31.380.073" oninput="sync()"/></div>
+        <div><label>Cód. Postal</label><input id="rem-cp" type="text" placeholder="CP" oninput="sync()"/></div>
+      </div>
+      <div class="field"><label>Domicilio real</label><input id="rem-dom" type="text" placeholder="Calle, número, localidad" oninput="sync()"/></div>
+      <div class="field field-row2">
+        <div><label>Localidad</label><input id="rem-loc" type="text" placeholder="Ciudad" oninput="sync()"/></div>
+        <div><label>Provincia</label><input id="rem-prov" type="text" placeholder="Provincia" oninput="sync()"/></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Tipo de comunicación</h3>
+    <div class="tipo-checks">
+      <label class="tipo-check"><input type="radio" name="tipo-com" value="1" onchange="sync()"> 1 — Comunicación de renuncia</label>
+      <label class="tipo-check"><input type="radio" name="tipo-com" value="2" onchange="sync()"> 2 — Comunicación de ausencia</label>
+      <label class="tipo-check"><input type="radio" name="tipo-com" value="3" checked onchange="sync()"> 3 — Otro tipo de comunicación</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Texto del telegrama</h3>
+
+    <div class="chips">
+      <button class="chip" onclick="insertarMotivo(this,'despido')">Despido injustificado</button>
+      <button class="chip" onclick="insertarMotivo(this,'indirecto')">Despido indirecto</button>
+      <button class="chip" onclick="insertarMotivo(this,'registracion')">Intimar registración</button>
+      <button class="chip" onclick="insertarMotivo(this,'haberes')">Reclamo de haberes</button>
+      <button class="chip" onclick="insertarMotivo(this,'vacaciones')">Reclamo vacaciones</button>
+      <button class="chip" onclick="insertarMotivo(this,'sac')">Reclamo SAC</button>
+      <button class="chip" onclick="insertarMotivo(this,'liquidacion')">Liquidación final</button>
+      <button class="chip" onclick="insertarMotivo(this,'certificados')">Certificados art. 80</button>
+      <button class="chip" onclick="insertarMotivo(this,'domicilio')">Constitución de domicilio</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="tg">
+        <select class="tb-sel sel-font" onchange="fmt('fontName',this.value)" title="Tipo de letra">
+          <option value="Times New Roman" selected>Times New Roman</option>
+          <option value="Arial">Arial</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Verdana">Verdana</option>
+        </select>
+      </div>
+      <div class="tg">
+        <select class="tb-sel sel-size" onchange="fmt('fontSize',this.value)" title="Tamaño de letra">
+          <option value="1">8pt</option>
+          <option value="2">10pt</option>
+          <option value="3" selected>12pt</option>
+          <option value="4">14pt</option>
+          <option value="5">18pt</option>
+          <option value="6">24pt</option>
+        </select>
+      </div>
+      <div class="tg">
+        <button class="tb" onclick="fmt('bold')" title="Negrita"><b>N</b></button>
+        <button class="tb" onclick="fmt('italic')" title="Cursiva"><i>K</i></button>
+        <button class="tb" onclick="fmt('underline')" title="Subrayado"><u>S</u></button>
+        <button class="tb" onclick="fmt('strikeThrough')" title="Tachado"><s>T</s></button>
+      </div>
+      <div class="tg">
+        <button class="tb" onclick="fmt('justifyLeft')" title="Alinear izquierda">≡←</button>
+        <button class="tb" onclick="fmt('justifyCenter')" title="Centrar">≡↔</button>
+        <button class="tb" onclick="fmt('justifyRight')" title="Alinear derecha">≡→</button>
+        <button class="tb" onclick="fmt('justifyFull')" title="Justificar">≡↔</button>
+      </div>
+      <div class="tg">
+        <select class="tb-sel sel-lh" onchange="setLH(this.value)" title="Interlineado">
+          <option value="1.2">Simple</option>
+          <option value="1.6" selected>1.5 líneas</option>
+          <option value="2">Doble</option>
+          <option value="2.5">2.5 líneas</option>
+          <option value="3">Triple</option>
+        </select>
+      </div>
+      <div class="tg">
+        <button class="tb" onclick="fmt('removeFormat')" title="Limpiar formato" style="font-size:11px">✕fmt</button>
+      </div>
+    </div>
+
+    <div class="editor-wrap">
+      <div class="editor" id="editor" contenteditable="true" spellcheck="true" oninput="contarSync()"></div>
+    </div>
+    <div class="wcount" id="wcount">0 palabras</div>
+  </div>
+
+  <div class="fecha-row">
+    <label>Fecha del telegrama:</label>
+    <input type="date" id="fecha" onchange="sync()"/>
+  </div>
+
+  <div class="btns-row">
+    <button class="btn btn-limpiar" onclick="limpiarTodo()">🗑 Limpiar formulario</button>
+    <button class="btn btn-print" onclick="imprimir()">🖨 Imprimir formulario oficial</button>
+    <button class="btn btn-word" onclick="copiarTexto()">📋 Copiar texto</button>
+  </div>
+
+</div>
+
+<!-- ====== FORMULARIO OFICIAL PARA IMPRIMIR ====== -->
+<div id="form-print">
+  <div class="fp">
+    <div class="fp-header">
+      <div class="fp-header-left">
+        <strong>MTSS</strong><br>
+        Ministerio de Trabajo<br>
+        y Seguridad Social
+      </div>
+      <div class="fp-header-center">
+        <h2>Telegrama Ley Nº 23.789</h2>
+      </div>
+      <div class="fp-header-right">
+        Correo Argentino<br>
+        <strong>Fecha:</strong><br>
+        <span id="fp-fecha-h"></span>
+      </div>
+    </div>
+
+    <div class="fp-body">
+      <div class="fp-cols">
+        <div class="fp-col">
+          <div class="fp-col-title">DESTINATARIO</div>
+          <div class="fp-f"><div class="fp-fl">Apellido y nombre o razón social</div><div class="fp-fv" id="fp-dn">&nbsp;</div></div>
+          <div class="fp-f"><div class="fp-fl">Ramo o actividad principal</div><div class="fp-fv" id="fp-dr">&nbsp;</div></div>
+          <div class="fp-fr">
+            <div class="fp-f"><div class="fp-fl">Domicilio laboral</div><div class="fp-fv" id="fp-dd">&nbsp;</div></div>
+            <div class="fp-f"><div class="fp-fl">Código Postal</div><div class="fp-fv" id="fp-dc">&nbsp;</div></div>
+          </div>
+          <div class="fp-fr2">
+            <div class="fp-f"><div class="fp-fl">Localidad</div><div class="fp-fv" id="fp-dl">&nbsp;</div></div>
+            <div class="fp-f"><div class="fp-fl">Provincia</div><div class="fp-fv" id="fp-dp">&nbsp;</div></div>
+          </div>
+        </div>
+        <div class="fp-col">
+          <div class="fp-col-title">REMITENTE</div>
+          <div class="fp-f"><div class="fp-fl">Apellido y nombre</div><div class="fp-fv" id="fp-rn">&nbsp;</div></div>
+          <div class="fp-fr">
+            <div class="fp-f"><div class="fp-fl">DNI Nº</div><div class="fp-fv" id="fp-rd">&nbsp;</div></div>
+            <div class="fp-f"><div class="fp-fl">Código Postal</div><div class="fp-fv" id="fp-rc">&nbsp;</div></div>
+          </div>
+          <div class="fp-f"><div class="fp-fl">Domicilio real</div><div class="fp-fv" id="fp-rdo">&nbsp;</div></div>
+          <div class="fp-fr2">
+            <div class="fp-f"><div class="fp-fl">Localidad</div><div class="fp-fv" id="fp-rl">&nbsp;</div></div>
+            <div class="fp-f"><div class="fp-fl">Provincia</div><div class="fp-fv" id="fp-rp">&nbsp;</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fp-tipo">
+        <strong>Tipo de comunicación:</strong>
+        <span class="fp-chk-row"><span class="fp-chk" id="fp-c1">&nbsp;</span> 1 — Comunicación de renuncia</span>
+        <span class="fp-chk-row"><span class="fp-chk" id="fp-c2">&nbsp;</span> 2 — Comunicación de ausencia</span>
+        <span class="fp-chk-row"><span class="fp-chk" id="fp-c3">&nbsp;</span> 3 — Otro tipo de comunicación</span>
+      </div>
+
+      <div class="fp-texto-section">
+        <div class="fp-texto-label">Texto del telegrama:</div>
+        <div class="fp-texto-content" id="fp-texto"></div>
+        <div class="fp-lineas" id="fp-lineas"></div>
+      </div>
+
+      <div class="fp-bottom">
+        <div>
+          <div class="fp-bottom-label">Fecha:</div>
+          <div class="fp-bottom-val" id="fp-fecha"></div>
+        </div>
+        <div>
+          <div class="fp-firma-box">Firma, aclaración y DNI del remitente</div>
+        </div>
+      </div>
+
+      <div class="fp-nota">En caso de comunicaciones efectuadas a organismos previsionales u obras sociales, se consignará su domicilio legal. Ministerio de Trabajo y Seguridad Social — Correo Argentino.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let tipoForm = '30';
+
+const textosMotivo = {
+  despido: 'Intimo a Ud. en el plazo de 72 horas el pago de las indemnizaciones por despido sin justa causa conforme arts. 232, 233 y 245 LCT, bajo apercibimiento de las sanciones del art. 2 Ley 25.323.',
+  indirecto: 'Ante las graves injurias laborales que hacen insostenible la relación laboral, me considero despedido con justa causa por exclusiva culpa de la patronal (art. 246 LCT). Intimo pago indemnizaciones plazo 72 horas.',
+  registracion: 'Intimo a Ud. en el plazo de 72 horas a proceder a la correcta registración de la relación laboral con indicación de real fecha de ingreso, categoría y remuneración conforme Ley 24.013, bajo apercibimiento de las multas de ley.',
+  haberes: 'Intimo a Ud. en el plazo de 72 horas al pago de los haberes adeudados bajo apercibimiento de las sanciones previstas en el art. 2 de la Ley 25.323.',
+  vacaciones: 'Intimo a Ud. en el plazo de 72 horas al pago de las vacaciones no gozadas y proporcionales conforme art. 156 LCT.',
+  sac: 'Intimo a Ud. en el plazo de 72 horas al pago del Sueldo Anual Complementario adeudado y proporcional conforme art. 122 LCT.',
+  liquidacion: 'Intimo a Ud. en el plazo de 72 horas al pago de la liquidación final con todos los rubros remunerativos e indemnizatorios de ley.',
+  certificados: 'Intimo a Ud. en el plazo de 72 horas a hacer entrega de los certificados de trabajo y de servicios previsionales conforme art. 80 LCT, bajo apercibimiento de las sanciones legales.',
+  domicilio: 'Constituyo domicilio laboral en [DOMICILIO] a todos los efectos del contrato de trabajo.'
+};
+
+function setTipo(t) {
+  tipoForm = t;
+  document.getElementById('tab-30').classList.toggle('active', t === '30');
+  document.getElementById('tab-mas30').classList.toggle('active', t === 'mas30');
+  sync();
+}
+
+function fmt(cmd, val) {
+  document.getElementById('editor').focus();
+  document.execCommand(cmd, false, val || null);
+}
+
+function setLH(v) {
+  document.getElementById('editor').style.lineHeight = v;
+}
+
+function insertarMotivo(btn, motivo) {
+  btn.classList.toggle('active');
+  const ed = document.getElementById('editor');
+  ed.focus();
+  const txt = textosMotivo[motivo] || '';
+  if (btn.classList.contains('active')) {
+    const br = ed.innerHTML ? '<br>' : '';
+    document.execCommand('insertHTML', false, br + txt);
+  }
+  contarSync();
+}
+
+function contarSync() {
+  const txt = document.getElementById('editor').innerText.trim();
+  const n = txt ? txt.split(/\s+/).length : 0;
+  document.getElementById('wcount').textContent = n + ' palabras';
+  sync();
+}
+
+function gv(id) { return document.getElementById(id).value || ''; }
+
+function sync() {
+  document.getElementById('fp-dn').textContent = gv('dest-nombre') || '\u00a0';
+  document.getElementById('fp-dr').textContent = gv('dest-ramo') || '\u00a0';
+  document.getElementById('fp-dd').textContent = gv('dest-dom') || '\u00a0';
+  document.getElementById('fp-dc').textContent = gv('dest-cp') || '\u00a0';
+  document.getElementById('fp-dl').textContent = gv('dest-loc') || '\u00a0';
+  document.getElementById('fp-dp').textContent = gv('dest-prov') || '\u00a0';
+  document.getElementById('fp-rn').textContent = gv('rem-nombre') || '\u00a0';
+  document.getElementById('fp-rd').textContent = gv('rem-dni') || '\u00a0';
+  document.getElementById('fp-rc').textContent = gv('rem-cp') || '\u00a0';
+  document.getElementById('fp-rdo').textContent = gv('rem-dom') || '\u00a0';
+  document.getElementById('fp-rl').textContent = gv('rem-loc') || '\u00a0';
+  document.getElementById('fp-rp').textContent = gv('rem-prov') || '\u00a0';
+  document.getElementById('fp-texto').innerHTML = document.getElementById('editor').innerHTML || '\u00a0';
+  const sel = document.querySelector('input[name="tipo-com"]:checked');
+  const v = sel ? sel.value : '3';
+  document.getElementById('fp-c1').textContent = v === '1' ? '✓' : '\u00a0';
+  document.getElementById('fp-c2').textContent = v === '2' ? '✓' : '\u00a0';
+  document.getElementById('fp-c3').textContent = v === '3' ? '✓' : '\u00a0';
+  const f = gv('fecha');
+  const fd = f ? new Date(f + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '\u00a0';
+  document.getElementById('fp-fecha').textContent = fd;
+  document.getElementById('fp-fecha-h').textContent = fd;
+  let lineas = '';
+  const nLineas = tipoForm === 'mas30' ? 16 : 8;
+  for (let i = 0; i < nLineas; i++) lineas += '<div class="fp-linea"></div>';
+  document.getElementById('fp-lineas').innerHTML = lineas;
+}
+
+function imprimir() {
+  sync();
+  window.print();
+}
+
+function limpiarTodo() {
+  if (confirm('¿Limpiar todos los datos del formulario?')) {
+    ['dest-nombre','dest-ramo','dest-dom','dest-cp','dest-loc','dest-prov',
+     'rem-nombre','rem-dni','rem-cp','rem-dom','rem-loc','rem-prov'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('editor').innerHTML = '';
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    document.querySelector('input[value="3"]').checked = true;
+    contarSync();
+  }
+}
+
+function copiarTexto() {
+  const texto = document.getElementById('editor').innerText;
+  navigator.clipboard.writeText(texto).then(() => {
+    alert('Texto copiado al portapapeles');
+  }).catch(() => {
+    alert('Seleccioná el texto manualmente y copiá con Ctrl+C');
+  });
+}
+
+// Inicializar fecha de hoy
+document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+sync();
+</script>
+
+</body>
+</html>
