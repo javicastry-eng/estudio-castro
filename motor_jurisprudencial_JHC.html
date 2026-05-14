@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motor Jurisprudencial — Estudio JHC</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d0f12; --bg2:#141720; --bg3:#1c2030;
+  --border:#2a2f3e; --border2:#3a4055;
+  --text:#e8eaf0; --text2:#8a90a0; --text3:#525870;
+  --blue:#4a7fff; --blue-dim:#1e2d4a;
+  --green:#3dba7a; --green-dim:#162b22;
+  --amber:#f0a030; --amber-dim:#2a1f08;
+  --red:#e05060;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* SETUP SCREEN */
+.setup-screen{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  z-index:999;
+}
+.setup-box{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-top:2px solid var(--blue);
+  border-radius:6px;padding:36px 40px;width:100%;max-width:480px;
+}
+.setup-logo{font-family:var(--mono);font-size:11px;color:var(--blue);letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px}
+.setup-title{font-size:20px;font-weight:600;color:var(--text);margin-bottom:6px}
+.setup-sub{font-size:13px;color:var(--text3);margin-bottom:28px;line-height:1.6}
+.setup-label{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;display:block}
+.setup-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);padding:10px 14px;font-family:var(--mono);font-size:13px;
+  border-radius:4px;outline:none;margin-bottom:20px;
+}
+.setup-input:focus{border-color:var(--blue)}
+.setup-input::placeholder{color:var(--text3)}
+.setup-btn{
+  width:100%;padding:12px;background:var(--blue-dim);border:1px solid var(--blue);
+  color:var(--blue);font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;border-radius:4px;cursor:pointer;font-weight:500;
+}
+.setup-btn:hover{background:var(--blue);color:#fff}
+.setup-note{font-size:11px;color:var(--text3);margin-top:14px;line-height:1.6;font-family:var(--mono)}
+.setup-note span{color:var(--green)}
+
+/* MAIN APP (oculto hasta configurar) */
+.app{display:none}
+.app.show{display:block}
+
+/* HEADER */
+.header{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:14px 24px;display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:100;flex-wrap:wrap;
+}
+.header-logo{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--blue);letter-spacing:.05em}
+.header-sep{color:var(--text3);margin:0 4px}
+.header-title{font-size:13px;color:var(--text2)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.conn-badge{
+  font-family:var(--mono);font-size:11px;padding:3px 10px;
+  border-radius:3px;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text3);display:flex;align-items:center;gap:6px;
+}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--text3)}
+.dot.ok{background:var(--green)}
+.dot.spin{background:var(--amber);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.reset-btn{
+  font-family:var(--mono);font-size:10px;padding:3px 8px;
+  border:1px solid var(--border);color:var(--text3);background:transparent;
+  border-radius:3px;cursor:pointer;letter-spacing:.05em;
+}
+.reset-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* CAUSA BAR */
+.causa-bar{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:10px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.causa-label{font-family:var(--mono);font-size:11px;color:var(--text3);white-space:nowrap;text-transform:uppercase;letter-spacing:.08em}
+.causa-sel{
+  flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);padding:7px 12px;font-family:var(--sans);font-size:13px;
+  border-radius:4px;outline:none;cursor:pointer;
+}
+.causa-sel:focus{border-color:var(--blue)}
+.link-btns{display:flex;gap:6px}
+.lbtn{
+  font-family:var(--mono);font-size:10px;padding:5px 10px;border-radius:3px;
+  text-decoration:none;border:1px solid;cursor:pointer;display:none;
+  align-items:center;gap:4px;letter-spacing:.04em;font-weight:500;
+}
+.lbtn.show{display:inline-flex}
+.lbtn-drive{color:var(--green);border-color:var(--green);background:var(--green-dim)}
+.lbtn-notion{color:var(--amber);border-color:var(--amber);background:var(--amber-dim)}
+.lbtn-seclo{color:var(--blue);border-color:var(--blue);background:var(--blue-dim)}
+
+/* CTX BAR */
+.ctx-bar{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:8px 24px;font-size:11px;color:var(--text3);line-height:1.6;
+  display:none;font-family:var(--mono);
+}
+.ctx-bar.show{display:block}
+.ctx-strong{color:var(--blue)}
+
+/* SEARCH */
+.search-bar{
+  padding:10px 24px;border-bottom:1px solid var(--border);
+  display:flex;gap:8px;background:var(--bg);
+}
+.search-input{
+  flex:1;background:var(--bg2);border:1px solid var(--border);
+  color:var(--text);padding:8px 14px;font-family:var(--sans);font-size:13px;
+  border-radius:4px;outline:none;
+}
+.search-input:focus{border-color:var(--blue)}
+.search-input::placeholder{color:var(--text3)}
+.search-btn{
+  background:var(--bg3);border:1px solid var(--border2);color:var(--text2);
+  padding:8px 16px;font-family:var(--mono);font-size:11px;border-radius:4px;
+  cursor:pointer;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;
+}
+.search-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* MAIN */
+.main{display:grid;grid-template-columns:1fr 1fr;min-height:calc(100vh - 200px)}
+.panel{padding:20px 24px}
+.panel-left{border-right:1px solid var(--border);display:flex;flex-direction:column;gap:12px}
+.panel-right{overflow-y:auto;max-height:calc(100vh - 220px)}
+.panel-label{
+  font-family:var(--mono);font-size:10px;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.char-count{margin-left:auto;color:var(--text3)}
+textarea{
+  width:100%;height:220px;background:var(--bg2);border:1px solid var(--border);
+  color:var(--text);padding:12px 14px;font-family:var(--sans);font-size:13px;
+  line-height:1.7;border-radius:4px;resize:vertical;outline:none;
+}
+textarea:focus{border-color:var(--blue)}
+textarea::placeholder{color:var(--text3)}
+.btn-ia{
+  width:100%;padding:11px;background:var(--blue-dim);border:1px solid var(--blue);
+  color:var(--blue);font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;border-radius:4px;cursor:pointer;font-weight:500;
+}
+.btn-ia:hover{background:var(--blue);color:#fff}
+.btn-ia:disabled{opacity:.3;cursor:not-allowed}
+
+/* ANÁLISIS */
+.analysis-wrap{display:none}
+.analysis-wrap.show{display:block}
+.analysis-header{
+  font-family:var(--mono);font-size:10px;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;
+  display:flex;align-items:center;
+}
+.analysis-box{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-left:2px solid var(--blue);border-radius:0 4px 4px 0;
+  padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text2);
+  white-space:pre-wrap;max-height:280px;overflow-y:auto;
+}
+.btn-copy-sm{
+  margin-left:auto;background:transparent;border:1px solid var(--border);
+  color:var(--text3);padding:3px 10px;font-family:var(--mono);font-size:10px;
+  border-radius:3px;cursor:pointer;letter-spacing:.05em;
+}
+.btn-copy-sm:hover{border-color:var(--green);color:var(--green)}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:14px}
+.tab{
+  font-family:var(--mono);font-size:10px;padding:5px 12px;border-radius:3px;
+  cursor:pointer;border:1px solid var(--border);color:var(--text3);
+  background:transparent;text-transform:uppercase;letter-spacing:.07em;
+}
+.tab.on{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+.tab-count{font-size:10px;padding:1px 6px;border-radius:2px;margin-left:5px;font-weight:600}
+.tc-auto{background:var(--blue-dim);color:var(--blue)}
+.tc-man{background:var(--amber-dim);color:var(--amber)}
+
+/* FALLOS */
+.fallo{
+  background:var(--bg2);border:1px solid var(--border);
+  border-left:2px solid var(--blue);border-radius:0 4px 4px 0;
+  padding:11px 14px;margin-bottom:8px;
+}
+.fallo.manual{border-left-color:var(--amber)}
+.fallo-titulo{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+.fallo-tribunal{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.fallo-holding{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px}
+.btn-cita{
+  font-family:var(--mono);font-size:10px;padding:3px 9px;
+  border:1px solid var(--border);color:var(--text3);background:transparent;
+  border-radius:3px;cursor:pointer;letter-spacing:.04em;
+}
+.btn-cita:hover,.btn-cita.copied{border-color:var(--green);color:var(--green)}
+.empty-state{font-family:var(--mono);font-size:11px;color:var(--text3);font-style:italic;padding:4px 0}
+.pbar-wrap{height:2px;background:var(--border);overflow:hidden}
+.pbar-fill{height:100%;background:var(--blue);width:0;transition:width .4s}
+
+@media(max-width:700px){
+  .main{grid-template-columns:1fr}
+  .panel-left{border-right:none;border-bottom:1px solid var(--border)}
+  .panel-right{max-height:500px}
+}
+</style>
+</head>
+<body>
+
+<!-- PANTALLA DE CONFIGURACIÓN -->
+<div class="setup-screen" id="setup-screen">
+  <div class="setup-box">
+    <div class="setup-logo">Estudio Castro — JHC</div>
+    <div class="setup-title">Motor Jurisprudencial</div>
+    <div class="setup-sub">Ingresá tus credenciales para activar el sistema. Se guardan solo en tu navegador — nunca se envían a ningún servidor externo.</div>
+
+    <label class="setup-label">Supabase URL</label>
+    <input class="setup-input" id="cfg-url" placeholder="https://xxxx.supabase.co" />
+
+    <label class="setup-label">Supabase Secret Key</label>
+    <input class="setup-input" id="cfg-key" type="password" placeholder="sb_secret_..." />
+
+    <label class="setup-label">Anthropic API Key</label>
+    <input class="setup-input" id="cfg-ant" type="password" placeholder="sk-ant-..." />
+
+    <button class="setup-btn" onclick="saveConfig()">▶ activar sistema</button>
+    <div class="setup-note">
+      <span>✓</span> Las claves se guardan en localStorage de tu navegador.<br>
+      <span>✓</span> El archivo HTML no contiene ninguna credencial.<br>
+      Solo tenés que configurarlo una vez por dispositivo.
+    </div>
+  </div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div class="app" id="app">
+
+<div class="header">
+  <span class="header-logo">JHC</span>
+  <span class="header-sep">|</span>
+  <span class="header-title">Motor Jurisprudencial</span>
+  <div class="header-right">
+    <span class="conn-badge">
+      <span class="dot spin" id="dot"></span>
+      <span id="conn-txt">conectando...</span>
+    </span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--text3)" id="fallos-count"></span>
+    <button class="reset-btn" onclick="resetConfig()" title="Cambiar credenciales">⚙ config</button>
+  </div>
+</div>
+
+<div class="causa-bar">
+  <span class="causa-label">Causa //</span>
+  <select class="causa-sel" id="exp-sel" onchange="loadExp()">
+    <option value="">— cargando expedientes —</option>
+  </select>
+  <div class="link-btns">
+    <a id="lnk-drive" class="lbtn lbtn-drive" target="_blank" href="#">▲ Drive</a>
+    <a id="lnk-notion" class="lbtn lbtn-notion" target="_blank" href="#">◆ Notion</a>
+    <a id="lnk-seclo" class="lbtn lbtn-seclo" target="_blank" href="#">⚖ SECLO</a>
+  </div>
+</div>
+
+<div class="ctx-bar" id="ctx-bar"><span id="ctx-content"></span></div>
+<div class="pbar-wrap"><div class="pbar-fill" id="pbar"></div></div>
+
+<div class="search-bar">
+  <input class="search-input" id="manual-q" placeholder="Buscar jurisprudencia — solidaridad, despido, ART, tutela, Ley 27.802..." onkeydown="if(event.key==='Enter')doManual()"/>
+  <button class="search-btn" onclick="doManual()">buscar</button>
+</div>
+
+<div class="main">
+  <div class="panel panel-left">
+    <div>
+      <div class="panel-label">editor de argumento <span class="char-count" id="chars">0</span></div>
+      <textarea id="editor" placeholder="Seleccioná una causa y escribí tu argumento. Las citas aparecen automáticamente..."></textarea>
+    </div>
+    <button class="btn-ia" id="btn-ia" onclick="doIA()" disabled>◈ mejorar argumento con IA</button>
+    <div class="analysis-wrap" id="ia-wrap">
+      <div class="analysis-header">
+        análisis IA + citas
+        <button class="btn-copy-sm" onclick="copyIA()" id="btn-copy-ia">copiar</button>
+      </div>
+      <div class="analysis-box" id="ia-out"></div>
+    </div>
+  </div>
+
+  <div class="panel panel-right">
+    <div class="tabs">
+      <button class="tab on" id="tab-a" onclick="switchTab('a')">automáticas <span class="tab-count tc-auto" id="n-auto">0</span></button>
+      <button class="tab" id="tab-m" onclick="switchTab('m')">búsqueda <span class="tab-count tc-man" id="n-man">0</span></button>
+    </div>
+    <div id="pan-a">
+      <div class="empty-state" id="status-a">// esperando texto en el editor...</div>
+      <div id="res-a"></div>
+    </div>
+    <div id="pan-m" style="display:none">
+      <div class="empty-state" id="status-m">// usá la barra de búsqueda arriba...</div>
+      <div id="res-m"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ── CREDENCIALES DESDE LOCALSTORAGE ──
+let SB, SK, ANT_KEY;
+
+const HOLCIM = {
+  caratula:"Rodríguez Maximiliano Daniel c/ Holcim Argentina S.A. y otros s/ despido indirecto",
+  expte:"15905/2026", juzgado:"JNT N°16 CNAT",
+  estrategia:"Despido indirecto art. 246 LCT. Fraude laboral art. 14 LCT (Supply of Works / Grupo Tossa). Solidaridad Holcim art. 30 LCT. Inconstitucionalidad Ley 27.802 art. 55. Deuda de valor CCCN arts. 772 y 1740.",
+  codemandados:"Holcim Argentina SA · Supply of Works SRL · Grupo Tossa SRL · C. Ramírez · V. Ramírez · R. Gianastacio · N. Grandinetti"
+};
+
+let expedientes=[], expActual=null, autoFallos=[], iaText="", timer=null;
+
+function saveConfig() {
+  const url = document.getElementById("cfg-url").value.trim();
+  const key = document.getElementById("cfg-key").value.trim();
+  const ant = document.getElementById("cfg-ant").value.trim();
+  if (!url || !key || !ant) { alert("Completá los tres campos."); return; }
+  localStorage.setItem("jhc_sb_url", url);
+  localStorage.setItem("jhc_sb_key", key);
+  localStorage.setItem("jhc_ant_key", ant);
+  loadApp();
+}
+
+function loadApp() {
+  SB = localStorage.getItem("jhc_sb_url");
+  SK = localStorage.getItem("jhc_sb_key");
+  ANT_KEY = localStorage.getItem("jhc_ant_key");
+  if (!SB || !SK || !ANT_KEY) {
+    document.getElementById("setup-screen").style.display = "flex";
+    document.getElementById("app").className = "app";
+    return;
+  }
+  document.getElementById("setup-screen").style.display = "none";
+  document.getElementById("app").className = "app show";
+  init();
+}
+
+function resetConfig() {
+  if (!confirm("¿Querés cambiar las credenciales?")) return;
+  localStorage.removeItem("jhc_sb_url");
+  localStorage.removeItem("jhc_sb_key");
+  localStorage.removeItem("jhc_ant_key");
+  location.reload();
+}
+
+async function sbGet(table, params) {
+  const H = { "apikey": SK, "Authorization": "Bearer " + SK };
+  const r = await fetch(`${SB}/rest/v1/${table}?` + new URLSearchParams(params), { headers: H });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+function getCaratula(e) {
+  return e.caratula || e.titulo || e.nombre || Object.values(e).find(v => typeof v==='string' && v.length>8) || "Sin nombre";
+}
+
+async function init() {
+  try {
+    const exps = await sbGet("expedientes", { select:"*", limit:50 });
+    expedientes = exps;
+    const sel = document.getElementById("exp-sel");
+    sel.innerHTML = '<option value="">— Seleccioná una causa —</option>';
+    exps.forEach((e, i) => {
+      const o = document.createElement("option");
+      o.value = i; o.textContent = getCaratula(e);
+      sel.appendChild(o);
+    });
+    const hi = exps.findIndex(e => JSON.stringify(e).toLowerCase().includes("holcim") || JSON.stringify(e).toLowerCase().includes("rodriguez"));
+    if (hi >= 0) { sel.value = hi; loadExp(); }
+    const fallos = await sbGet("jurisprudencia", { select:"titulo", limit:100 });
+    document.getElementById("fallos-count").textContent = fallos.length + " fallos";
+    document.getElementById("dot").className = "dot ok";
+    document.getElementById("conn-txt").textContent = "supabase ok";
+  } catch(e) {
+    document.getElementById("dot").className = "dot";
+    document.getElementById("conn-txt").textContent = "error: " + e.message;
+    const sel = document.getElementById("exp-sel");
+    sel.innerHTML = '<option value="hol">Rodríguez c/ Holcim — 15905/2026</option>';
+    expActual = HOLCIM; showCtx(HOLCIM);
+  }
+}
+
+function loadExp() {
+  const val = document.getElementById("exp-sel").value;
+  if (!val) { expActual = null; document.getElementById("ctx-bar").className = "ctx-bar"; return; }
+  if (val === "hol") { expActual = HOLCIM; showCtx(HOLCIM); return; }
+  const exp = expedientes[parseInt(val)];
+  if (!exp) return;
+  const cara = getCaratula(exp);
+  const ctx = {
+    caratula: cara,
+    expte: exp.expediente||exp.expte||exp.numero||"",
+    juzgado: exp.juzgado||exp.tribunal||"",
+    estrategia: exp.estrategia||exp.observaciones||exp.notas||"",
+    codemandados: exp.codemandados||exp.demandado||"",
+    drive: exp.link_drive_carpeta||exp.drive||"",
+    notion: exp.link_notion_pagina||exp.notion||"",
+    seclo: exp.link_seclo||exp.seclo||""
+  };
+  if (cara.toLowerCase().includes("holcim") || cara.toLowerCase().includes("rodriguez")) {
+    Object.assign(ctx, HOLCIM, { drive:ctx.drive, notion:ctx.notion, seclo:ctx.seclo });
+  }
+  expActual = ctx;
+  showCtx(ctx);
+  const setLink = (id, url) => {
+    const el = document.getElementById(id);
+    if (url) { el.href = url; el.classList.add("show"); } else { el.classList.remove("show"); }
+  };
+  setLink("lnk-drive", ctx.drive);
+  setLink("lnk-notion", ctx.notion);
+  setLink("lnk-seclo", ctx.seclo);
+  document.getElementById("editor").placeholder = "Escribí tu argumento para " + cara.split(" c/")[0].trim() + "...";
+}
+
+function showCtx(ctx) {
+  const bar = document.getElementById("ctx-bar");
+  bar.className = "ctx-bar show";
+  document.getElementById("ctx-content").innerHTML =
+    `<span class="ctx-strong">${ctx.caratula}</span>` +
+    (ctx.expte ? ` <span style="color:var(--text3)">// expte. ${ctx.expte}</span>` : "") +
+    (ctx.juzgado ? ` <span style="color:var(--text3)">// ${ctx.juzgado}</span>` : "") +
+    (ctx.estrategia ? `<br><span style="color:var(--text3)">↳ ${ctx.estrategia.substring(0,200)}${ctx.estrategia.length>200?"…":""}</span>` : "");
+}
+
+function kws(text) {
+  const stop = new Set(["que","con","del","los","las","por","para","una","este","esta","sido","como","pero","sus","sobre","entre","cuando","todos","desde","hasta","puede","debe","tiene","están","siendo","haber","hacer","mismo","dicho","caso","hecho","todo","cada","otro","cual","solo","sino","más","sin","etc","son","era","fue"]);
+  return [...new Set(text.toLowerCase().replace(/[.,;:()\[\]¿?¡!\n\r]/g," ").split(/\s+/).filter(w=>w.length>4&&!stop.has(w)&&!/^\d+$/.test(w)))].sort((a,b)=>b.length-a.length).slice(0,6);
+}
+
+async function autoSearch(txt) {
+  const ws = kws(txt);
+  if (!ws.length) return;
+  document.getElementById("status-a").textContent = "// buscando: " + ws.slice(0,3).join(", ") + "...";
+  document.getElementById("pbar").style.width = "40%";
+  const seen = new Set(), res = [];
+  for (const w of ws.slice(0,4)) {
+    try {
+      const d = await sbGet("jurisprudencia", {"or":`titulo.ilike.%${w}%,resumen_doctrina.ilike.%${w}%`,"select":"*","limit":3});
+      for (const f of d) { if (!seen.has(f.titulo)) { seen.add(f.titulo); res.push(f); } }
+    } catch(e) {}
+  }
+  autoFallos = res.slice(0,8);
+  document.getElementById("n-auto").textContent = autoFallos.length;
+  document.getElementById("pbar").style.width = "0";
+  document.getElementById("status-a").textContent = autoFallos.length ? "" : "// sin resultados — probá búsqueda manual";
+  renderFallos(autoFallos, "res-a", false);
+}
+
+async function doManual() {
+  const q = document.getElementById("manual-q").value.trim();
+  if (!q) return;
+  switchTab("m");
+  document.getElementById("status-m").textContent = `// buscando "${q}"...`;
+  document.getElementById("res-m").innerHTML = "";
+  try {
+    const d = await sbGet("jurisprudencia", {"or":`titulo.ilike.%${q}%,resumen_doctrina.ilike.%${q}%`,"select":"*","limit":15});
+    document.getElementById("n-man").textContent = d.length;
+    document.getElementById("status-m").textContent = d.length ? "" : "// sin resultados — probá con otra raíz";
+    renderFallos(d, "res-m", true);
+  } catch(e) { document.getElementById("status-m").textContent = "// error: " + e.message; }
+}
+
+function renderFallos(fallos, cid, isManual) {
+  const el = document.getElementById(cid);
+  if (!fallos.length) { el.innerHTML = ""; return; }
+  el.innerHTML = fallos.map((f,i) => {
+    const id = (isManual?"m":"a") + i;
+    const cita = `${f.titulo||""} (${f.tribunal||""}): "${f.resumen_doctrina||""}"`;
+    return `<div class="fallo${isManual?" manual":""}">
+      <div class="fallo-titulo">${f.titulo||"—"}</div>
+      <div class="fallo-tribunal">${f.tribunal||""}</div>
+      <div class="fallo-holding">${f.resumen_doctrina||""}</div>
+      <button class="btn-cita" id="bc-${id}" onclick="copyCita('${id}',\`${cita.replace(/`/g,"'")}\`)">copiar cita</button>
+    </div>`;
+  }).join("");
+}
+
+function copyCita(id, text) {
+  navigator.clipboard.writeText(text).catch(()=>{});
+  const b = document.getElementById("bc-"+id);
+  if (b) { b.textContent="✓ copiado"; b.classList.add("copied"); setTimeout(()=>{b.textContent="copiar cita";b.classList.remove("copied");},2000); }
+}
+
+function copyIA() {
+  navigator.clipboard.writeText(iaText).catch(()=>{});
+  const b = document.getElementById("btn-copy-ia");
+  b.textContent = "✓ copiado";
+  setTimeout(()=>{ b.textContent = "copiar"; }, 2000);
+}
+
+async function doIA() {
+  const txt = document.getElementById("editor").value.trim();
+  if (!txt) return;
+  const btn = document.getElementById("btn-ia");
+  btn.disabled = true; btn.textContent = "◈ procesando...";
+  document.getElementById("ia-wrap").className = "analysis-wrap show";
+  const out = document.getElementById("ia-out");
+  out.textContent = "analizando argumento...";
+  const ctx = expActual || { caratula:"Causa no seleccionada", estrategia:"", codemandados:"" };
+  const fc = autoFallos.length ? autoFallos.map(f=>`- ${f.titulo} (${f.tribunal}): ${f.resumen_doctrina}`).join("\n") : "Sin fallos encontrados.";
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514", max_tokens:1000,
+        messages:[{role:"user", content:`Sos el Dr. Javier Castro, abogado laboralista argentino (CPACF T°102 F°174).
+
+CAUSA: ${ctx.caratula}
+${ctx.expte?"EXPEDIENTE: "+ctx.expte:""}
+${ctx.juzgado?"JUZGADO: "+ctx.juzgado:""}
+${ctx.codemandados?"PARTES: "+ctx.codemandados:""}
+${ctx.estrategia?"ESTRATEGIA: "+ctx.estrategia:""}
+
+ARGUMENTO A MEJORAR:
+${txt}
+
+JURISPRUDENCIA DISPONIBLE:
+${fc}
+
+TAREA:
+1. OBSERVACIONES (2-3 líneas): qué reforzar.
+2. VERSIÓN MEJORADA: reescribí con las citas incorporadas, en estilo escrito judicial argentino, listo para copiar.`}]
+      })
+    });
+    const data = await res.json();
+    iaText = (data.content||[]).map(b=>b.text||"").join("");
+    out.textContent = iaText || "Sin respuesta.";
+  } catch(e) { out.textContent = "Error IA: " + e.message; }
+  btn.disabled = false; btn.textContent = "◈ mejorar argumento con IA";
+}
+
+function switchTab(t) {
+  document.getElementById("pan-a").style.display = t==="a"?"":"none";
+  document.getElementById("pan-m").style.display = t==="m"?"":"none";
+  document.getElementById("tab-a").className = "tab"+(t==="a"?" on":"");
+  document.getElementById("tab-m").className = "tab"+(t==="m"?" on":"");
+}
+
+const ed = document.getElementById("editor");
+ed.addEventListener("input", function() {
+  const txt = this.value;
+  document.getElementById("chars").textContent = txt.length;
+  document.getElementById("btn-ia").disabled = txt.trim().length < 20;
+  if (timer) clearTimeout(timer);
+  if (txt.trim().length >= 40) {
+    timer = setTimeout(()=>autoSearch(txt), 1800);
+  } else {
+    document.getElementById("status-a").textContent = "// esperando texto...";
+    document.getElementById("res-a").innerHTML = "";
+    document.getElementById("n-auto").textContent = "0";
+  }
+});
+
+// Arrancar
+loadApp();
+</script>
+</body>
+</html>
