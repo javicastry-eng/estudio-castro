@@ -13,6 +13,7 @@
   --blue:#4a7fff; --blue-dim:#1e2d4a;
   --green:#3dba7a; --green-dim:#162b22;
   --amber:#f0a030; --amber-dim:#2a1f08;
+  --purple:#9b72f0; --purple-dim:#1e1535;
   --red:#e05060;
   --mono:'IBM Plex Mono',monospace;
   --sans:'IBM Plex Sans',sans-serif;
@@ -51,7 +52,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .setup-note{font-size:11px;color:var(--text3);margin-top:14px;line-height:1.6;font-family:var(--mono)}
 .setup-note span{color:var(--green)}
 
-/* MAIN APP (oculto hasta configurar) */
+/* MAIN APP */
 .app{display:none}
 .app.show{display:block}
 
@@ -198,15 +199,33 @@ textarea::placeholder{color:var(--text3)}
   padding:11px 14px;margin-bottom:8px;
 }
 .fallo.manual{border-left-color:var(--amber)}
+.fallo.doctrina{border-left-color:var(--purple)}
 .fallo-titulo{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
 .fallo-tribunal{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
 .fallo-holding{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px}
+.fallo-footer{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .btn-cita{
   font-family:var(--mono);font-size:10px;padding:3px 9px;
   border:1px solid var(--border);color:var(--text3);background:transparent;
   border-radius:3px;cursor:pointer;letter-spacing:.04em;
 }
 .btn-cita:hover,.btn-cita.copied{border-color:var(--green);color:var(--green)}
+
+/* BADGES ⚖️ / 📚 */
+.badge-juris{
+  font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;
+  background:var(--blue-dim);color:var(--blue);border:1px solid #1e2d4a;
+  letter-spacing:.04em;
+}
+.badge-doc{
+  font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;
+  background:var(--purple-dim);color:var(--purple);border:1px solid #2a1f4a;
+  letter-spacing:.04em;
+}
+.badge-src{
+  font-family:var(--mono);font-size:10px;color:var(--text3);margin-left:auto;
+}
+
 .empty-state{font-family:var(--mono);font-size:11px;color:var(--text3);font-style:italic;padding:4px 0}
 .pbar-wrap{height:2px;background:var(--border);overflow:hidden}
 .pbar-fill{height:100%;background:var(--blue);width:0;transition:width .4s}
@@ -278,7 +297,7 @@ textarea::placeholder{color:var(--text3)}
 <div class="pbar-wrap"><div class="pbar-fill" id="pbar"></div></div>
 
 <div class="search-bar">
-  <input class="search-input" id="manual-q" placeholder="Buscar jurisprudencia — solidaridad, despido, ART, tutela, Ley 27.802..." onkeydown="if(event.key==='Enter')doManual()"/>
+  <input class="search-input" id="manual-q" placeholder="Buscar jurisprudencia y doctrina — solidaridad, despido, ART, tutela, Ley 27.802..." onkeydown="if(event.key==='Enter')doManual()"/>
   <button class="search-btn" onclick="doManual()">buscar</button>
 </div>
 
@@ -373,6 +392,7 @@ function getCaratula(e) {
   return e.caratula || e.titulo || e.nombre || Object.values(e).find(v => typeof v==='string' && v.length>8) || "Sin nombre";
 }
 
+// ── INIT: cuenta jurisprudencia + doctrina en paralelo ──
 async function init() {
   try {
     const exps = await sbGet("expedientes", { select:"*", limit:50 });
@@ -386,8 +406,14 @@ async function init() {
     });
     const hi = exps.findIndex(e => JSON.stringify(e).toLowerCase().includes("holcim") || JSON.stringify(e).toLowerCase().includes("rodriguez"));
     if (hi >= 0) { sel.value = hi; loadExp(); }
-    const fallos = await sbGet("jurisprudencia", { select:"titulo", limit:100 });
-    document.getElementById("fallos-count").textContent = fallos.length + " fallos";
+
+    // Contar ambas tablas en paralelo
+    const [fallosJ, fallosD] = await Promise.all([
+      sbGet("jurisprudencia", { select:"titulo", limit:200 }),
+      sbGet("doctrina", { select:"titulo", limit:200 }).catch(() => [])
+    ]);
+    document.getElementById("fallos-count").textContent =
+      fallosJ.length + " fallos · " + fallosD.length + " doctrina";
     document.getElementById("dot").className = "dot ok";
     document.getElementById("conn-txt").textContent = "supabase ok";
   } catch(e) {
@@ -446,50 +472,111 @@ function kws(text) {
   return [...new Set(text.toLowerCase().replace(/[.,;:()\[\]¿?¡!\n\r]/g," ").split(/\s+/).filter(w=>w.length>4&&!stop.has(w)&&!/^\d+$/.test(w)))].sort((a,b)=>b.length-a.length).slice(0,6);
 }
 
+// ── AUTO SEARCH: jurisprudencia + doctrina en paralelo ──
 async function autoSearch(txt) {
   const ws = kws(txt);
   if (!ws.length) return;
   document.getElementById("status-a").textContent = "// buscando: " + ws.slice(0,3).join(", ") + "...";
   document.getElementById("pbar").style.width = "40%";
-  const seen = new Set(), res = [];
-  for (const w of ws.slice(0,4)) {
-    try {
-      const d = await sbGet("jurisprudencia", {"or":`titulo.ilike.%${w}%,resumen_doctrina.ilike.%${w}%`,"select":"*","limit":3});
-      for (const f of d) { if (!seen.has(f.titulo)) { seen.add(f.titulo); res.push(f); } }
-    } catch(e) {}
-  }
-  autoFallos = res.slice(0,8);
+
+  const seenJ = new Set(), seenD = new Set(), resJ = [], resD = [];
+
+  const queries = ws.slice(0,4).flatMap(w => [
+    sbGet("jurisprudencia", {
+      "or": `titulo.ilike.%${w}%,resumen_doctrina.ilike.%${w}%`,
+      "select": "*", "limit": 3
+    }).then(d => {
+      d.forEach(f => { if (!seenJ.has(f.titulo)) { seenJ.add(f.titulo); resJ.push({...f, _tipo:"juris"}); } });
+    }).catch(() => {}),
+
+    sbGet("doctrina", {
+      "or": `titulo.ilike.%${w}%,descripcion.ilike.%${w}%,contenido.ilike.%${w}%`,
+      "select": "*", "limit": 2
+    }).then(d => {
+      d.forEach(f => { if (!seenD.has(f.titulo)) { seenD.add(f.titulo); resD.push({...f, _tipo:"doctrina"}); } });
+    }).catch(() => {})
+  ]);
+
+  await Promise.all(queries);
+
+  // Jurisprudencia primero, luego doctrina
+  autoFallos = [...resJ.slice(0,6), ...resD.slice(0,3)];
   document.getElementById("n-auto").textContent = autoFallos.length;
   document.getElementById("pbar").style.width = "0";
   document.getElementById("status-a").textContent = autoFallos.length ? "" : "// sin resultados — probá búsqueda manual";
   renderFallos(autoFallos, "res-a", false);
 }
 
+// ── BÚSQUEDA MANUAL: jurisprudencia + doctrina en paralelo ──
 async function doManual() {
   const q = document.getElementById("manual-q").value.trim();
   if (!q) return;
   switchTab("m");
   document.getElementById("status-m").textContent = `// buscando "${q}"...`;
   document.getElementById("res-m").innerHTML = "";
+  document.getElementById("n-man").textContent = "0";
+
   try {
-    const d = await sbGet("jurisprudencia", {"or":`titulo.ilike.%${q}%,resumen_doctrina.ilike.%${q}%`,"select":"*","limit":15});
-    document.getElementById("n-man").textContent = d.length;
-    document.getElementById("status-m").textContent = d.length ? "" : "// sin resultados — probá con otra raíz";
-    renderFallos(d, "res-m", true);
-  } catch(e) { document.getElementById("status-m").textContent = "// error: " + e.message; }
+    const [jurisRes, docRes] = await Promise.all([
+      sbGet("jurisprudencia", {
+        "or": `titulo.ilike.%${q}%,resumen_doctrina.ilike.%${q}%`,
+        "select": "*", "limit": 12
+      }).catch(() => []),
+      sbGet("doctrina", {
+        "or": `titulo.ilike.%${q}%,descripcion.ilike.%${q}%,contenido.ilike.%${q}%`,
+        "select": "*", "limit": 6
+      }).catch(() => [])
+    ]);
+
+    const juris = jurisRes.map(f => ({...f, _tipo:"juris"}));
+    const doc   = docRes.map(f => ({...f, _tipo:"doctrina"}));
+    const total = [...juris, ...doc];
+
+    document.getElementById("n-man").textContent = total.length;
+    document.getElementById("status-m").textContent = total.length ? "" : "// sin resultados — probá con otra raíz";
+    renderFallos(total, "res-m", true);
+  } catch(e) {
+    document.getElementById("status-m").textContent = "// error: " + e.message;
+  }
 }
 
+// ── RENDER: muestra badge según _tipo ──
 function renderFallos(fallos, cid, isManual) {
   const el = document.getElementById(cid);
   if (!fallos.length) { el.innerHTML = ""; return; }
-  el.innerHTML = fallos.map((f,i) => {
-    const id = (isManual?"m":"a") + i;
-    const cita = `${f.titulo||""} (${f.tribunal||""}): "${f.resumen_doctrina||""}"`;
-    return `<div class="fallo${isManual?" manual":""}">
-      <div class="fallo-titulo">${f.titulo||"—"}</div>
-      <div class="fallo-tribunal">${f.tribunal||""}</div>
-      <div class="fallo-holding">${f.resumen_doctrina||""}</div>
-      <button class="btn-cita" id="bc-${id}" onclick="copyCita('${id}',\`${cita.replace(/`/g,"'")}\`)">copiar cita</button>
+
+  el.innerHTML = fallos.map((f, i) => {
+    const id = (isManual ? "m" : "a") + i;
+    const esDoc = f._tipo === "doctrina";
+
+    // Texto principal y cita según tipo
+    const titulo  = f.titulo || "—";
+    const fuente  = esDoc ? (f.tipo || "Doctrina") : (f.tribunal || "");
+    const holding = esDoc
+      ? (f.descripcion || f.contenido || "").substring(0, 300)
+      : (f.resumen_doctrina || "");
+    const driveLink = esDoc && f.drive_url
+      ? `<a href="${f.drive_url}" target="_blank" style="font-family:var(--mono);font-size:10px;color:var(--purple);text-decoration:none;margin-left:auto;">↗ Drive</a>`
+      : "";
+    const cita = esDoc
+      ? `${titulo} (${fuente}): "${holding}"`
+      : `${titulo} (${fuente}): "${holding}"`;
+
+    const badgeHTML = esDoc
+      ? `<span class="badge-doc">📚 Doctrina</span>`
+      : `<span class="badge-juris">⚖️ Jurisp.</span>`;
+
+    const claseExtra = esDoc ? " doctrina" : (isManual ? " manual" : "");
+
+    return `<div class="fallo${claseExtra}">
+      <div class="fallo-titulo">${titulo}</div>
+      <div class="fallo-tribunal">${fuente}</div>
+      <div class="fallo-holding">${holding}${holding.length >= 300 ? "…" : ""}</div>
+      <div class="fallo-footer">
+        ${badgeHTML}
+        <button class="btn-cita" id="bc-${id}" onclick="copyCita('${id}',\`${cita.replace(/`/g,"'")}\`)">copiar cita</button>
+        ${driveLink}
+      </div>
     </div>`;
   }).join("");
 }
@@ -507,6 +594,7 @@ function copyIA() {
   setTimeout(()=>{ b.textContent = "copiar"; }, 2000);
 }
 
+// ── IA: contexto unificado jurisprudencia + doctrina ──
 async function doIA() {
   const txt = document.getElementById("editor").value.trim();
   if (!txt) return;
@@ -515,43 +603,69 @@ async function doIA() {
   document.getElementById("ia-wrap").className = "analysis-wrap show";
   const out = document.getElementById("ia-out");
   out.textContent = "analizando argumento...";
+
   const ctx = expActual || { caratula:"Causa no seleccionada", estrategia:"", codemandados:"" };
-  const fc = autoFallos.length ? autoFallos.map(f=>`- ${f.titulo} (${f.tribunal}): ${f.resumen_doctrina}`).join("\n") : "Sin fallos encontrados.";
+
+  // Separar jurisprudencia y doctrina del pool actual
+  const jurisFallos = autoFallos.filter(f => f._tipo === "juris");
+  const docFallos   = autoFallos.filter(f => f._tipo === "doctrina");
+
+  let contextoBase = "";
+  if (jurisFallos.length) {
+    contextoBase += "JURISPRUDENCIA RELEVANTE:\n";
+    contextoBase += jurisFallos.map(f =>
+      `- ${f.titulo} (${f.tribunal}): ${f.resumen_doctrina}`
+    ).join("\n");
+  }
+  if (docFallos.length) {
+    contextoBase += "\n\nDOCTRINA Y NORMATIVA RELEVANTE:\n";
+    contextoBase += docFallos.map(f =>
+      `- ${f.titulo} (${f.tipo || "Doctrina"}): ${f.descripcion || f.contenido || ""}`
+    ).join("\n");
+  }
+  if (!contextoBase) contextoBase = "Sin referencias encontradas en la base de conocimiento.";
+
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method:"POST",
-      headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      headers:{
+        "Content-Type":"application/json",
+        "x-api-key": ANT_KEY,
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true"
+      },
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514", max_tokens:1000,
         messages:[{role:"user", content:`Sos el Dr. Javier Castro, abogado laboralista argentino (CPACF T°102 F°174).
 
 CAUSA: ${ctx.caratula}
-${ctx.expte?"EXPEDIENTE: "+ctx.expte:""}
-${ctx.juzgado?"JUZGADO: "+ctx.juzgado:""}
-${ctx.codemandados?"PARTES: "+ctx.codemandados:""}
-${ctx.estrategia?"ESTRATEGIA: "+ctx.estrategia:""}
+${ctx.expte ? "EXPEDIENTE: "+ctx.expte : ""}
+${ctx.juzgado ? "JUZGADO: "+ctx.juzgado : ""}
+${ctx.codemandados ? "PARTES: "+ctx.codemandados : ""}
+${ctx.estrategia ? "ESTRATEGIA: "+ctx.estrategia : ""}
 
 ARGUMENTO A MEJORAR:
 ${txt}
 
-JURISPRUDENCIA DISPONIBLE:
-${fc}
+BASE DE CONOCIMIENTO DEL ESTUDIO:
+${contextoBase}
 
 TAREA:
-1. OBSERVACIONES (2-3 líneas): qué reforzar.
-2. VERSIÓN MEJORADA: reescribí con las citas incorporadas, en estilo escrito judicial argentino, listo para copiar.`}]
+1. OBSERVACIONES (2-3 líneas): qué reforzar y qué citas incorporar.
+2. VERSIÓN MEJORADA: reescribí con las citas incorporadas, en estilo escrito judicial argentino, listo para copiar. Citá jurisprudencia con tribunal y doctrina/normativa con artículo y fuente.`}]
       })
     });
     const data = await res.json();
     iaText = (data.content||[]).map(b=>b.text||"").join("");
     out.textContent = iaText || "Sin respuesta.";
   } catch(e) { out.textContent = "Error IA: " + e.message; }
+
   btn.disabled = false; btn.textContent = "◈ mejorar argumento con IA";
 }
 
 function switchTab(t) {
-  document.getElementById("pan-a").style.display = t==="a"?"":"none";
-  document.getElementById("pan-m").style.display = t==="m"?"":"none";
+  document.getElementById("pan-a").style.display = t==="a" ? "" : "none";
+  document.getElementById("pan-m").style.display = t==="m" ? "" : "none";
   document.getElementById("tab-a").className = "tab"+(t==="a"?" on":"");
   document.getElementById("tab-m").className = "tab"+(t==="m"?" on":"");
 }
@@ -563,7 +677,7 @@ ed.addEventListener("input", function() {
   document.getElementById("btn-ia").disabled = txt.trim().length < 20;
   if (timer) clearTimeout(timer);
   if (txt.trim().length >= 40) {
-    timer = setTimeout(()=>autoSearch(txt), 1800);
+    timer = setTimeout(() => autoSearch(txt), 1800);
   } else {
     document.getElementById("status-a").textContent = "// esperando texto...";
     document.getElementById("res-a").innerHTML = "";
