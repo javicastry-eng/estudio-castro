@@ -200,6 +200,7 @@ textarea::placeholder{color:var(--text3)}
 }
 .fallo.manual{border-left-color:var(--amber)}
 .fallo.doctrina{border-left-color:var(--purple)}
+.fallo.modelo{border-left-color:var(--green)}
 .fallo-titulo{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
 .fallo-tribunal{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
 .fallo-holding{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px}
@@ -211,7 +212,7 @@ textarea::placeholder{color:var(--text3)}
 }
 .btn-cita:hover,.btn-cita.copied{border-color:var(--green);color:var(--green)}
 
-/* BADGES ⚖️ / 📚 */
+/* BADGES ⚖️ / 📚 / 📝 */
 .badge-juris{
   font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;
   background:var(--blue-dim);color:var(--blue);border:1px solid #1e2d4a;
@@ -220,6 +221,11 @@ textarea::placeholder{color:var(--text3)}
 .badge-doc{
   font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;
   background:var(--purple-dim);color:var(--purple);border:1px solid #2a1f4a;
+  letter-spacing:.04em;
+}
+.badge-mod{
+  font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;
+  background:var(--green-dim);color:var(--green);border:1px solid #162b22;
   letter-spacing:.04em;
 }
 .badge-src{
@@ -297,7 +303,7 @@ textarea::placeholder{color:var(--text3)}
 <div class="pbar-wrap"><div class="pbar-fill" id="pbar"></div></div>
 
 <div class="search-bar">
-  <input class="search-input" id="manual-q" placeholder="Buscar jurisprudencia y doctrina — solidaridad, despido, ART, tutela, Ley 27.802..." onkeydown="if(event.key==='Enter')doManual()"/>
+  <input class="search-input" id="manual-q" placeholder="Buscar jurisprudencia, doctrina y modelos — solidaridad, despido, ART, tutela, Ley 27.802..." onkeydown="if(event.key==='Enter')doManual()"/>
   <button class="search-btn" onclick="doManual()">buscar</button>
 </div>
 
@@ -392,7 +398,7 @@ function getCaratula(e) {
   return e.caratula || e.titulo || e.nombre || Object.values(e).find(v => typeof v==='string' && v.length>8) || "Sin nombre";
 }
 
-// ── INIT: cuenta jurisprudencia + doctrina en paralelo ──
+// ── INIT: cuenta jurisprudencia + doctrina + modelos en paralelo ──
 async function init() {
   try {
     const exps = await sbGet("expedientes", { select:"*", limit:50 });
@@ -407,13 +413,14 @@ async function init() {
     const hi = exps.findIndex(e => JSON.stringify(e).toLowerCase().includes("holcim") || JSON.stringify(e).toLowerCase().includes("rodriguez"));
     if (hi >= 0) { sel.value = hi; loadExp(); }
 
-    // Contar ambas tablas en paralelo
-    const [fallosJ, fallosD] = await Promise.all([
+    // Contar las tres tablas en paralelo
+    const [fallosJ, fallosD, fallosM] = await Promise.all([
       sbGet("jurisprudencia", { select:"titulo", limit:200 }),
-      sbGet("doctrina", { select:"titulo", limit:200 }).catch(() => [])
+      sbGet("doctrina", { select:"titulo", limit:200 }).catch(() => []),
+      sbGet("modelos", { select:"titulo", limit:200 }).catch(() => [])
     ]);
     document.getElementById("fallos-count").textContent =
-      fallosJ.length + " fallos · " + fallosD.length + " doctrina";
+      fallosJ.length + " fallos · " + fallosD.length + " doctrina · " + fallosM.length + " modelos";
     document.getElementById("dot").className = "dot ok";
     document.getElementById("conn-txt").textContent = "supabase ok";
   } catch(e) {
@@ -472,14 +479,15 @@ function kws(text) {
   return [...new Set(text.toLowerCase().replace(/[.,;:()\[\]¿?¡!\n\r]/g," ").split(/\s+/).filter(w=>w.length>4&&!stop.has(w)&&!/^\d+$/.test(w)))].sort((a,b)=>b.length-a.length).slice(0,6);
 }
 
-// ── AUTO SEARCH: jurisprudencia + doctrina en paralelo ──
+// ── AUTO SEARCH: jurisprudencia + doctrina + modelos en paralelo ──
 async function autoSearch(txt) {
   const ws = kws(txt);
   if (!ws.length) return;
   document.getElementById("status-a").textContent = "// buscando: " + ws.slice(0,3).join(", ") + "...";
   document.getElementById("pbar").style.width = "40%";
 
-  const seenJ = new Set(), seenD = new Set(), resJ = [], resD = [];
+  const seenJ = new Set(), seenD = new Set(), seenM = new Set();
+  const resJ = [], resD = [], resM = [];
 
   const queries = ws.slice(0,4).flatMap(w => [
     sbGet("jurisprudencia", {
@@ -494,20 +502,27 @@ async function autoSearch(txt) {
       "select": "*", "limit": 2
     }).then(d => {
       d.forEach(f => { if (!seenD.has(f.titulo)) { seenD.add(f.titulo); resD.push({...f, _tipo:"doctrina"}); } });
+    }).catch(() => {}),
+
+    sbGet("modelos", {
+      "or": `titulo.ilike.%${w}%,descripcion.ilike.%${w}%,tipo_escrito.ilike.%${w}%`,
+      "select": "*", "limit": 2
+    }).then(d => {
+      d.forEach(f => { if (!seenM.has(f.titulo)) { seenM.add(f.titulo); resM.push({...f, _tipo:"modelo"}); } });
     }).catch(() => {})
   ]);
 
   await Promise.all(queries);
 
-  // Jurisprudencia primero, luego doctrina
-  autoFallos = [...resJ.slice(0,6), ...resD.slice(0,3)];
+  // Jurisprudencia primero, luego doctrina, luego modelos
+  autoFallos = [...resJ.slice(0,6), ...resD.slice(0,3), ...resM.slice(0,2)];
   document.getElementById("n-auto").textContent = autoFallos.length;
   document.getElementById("pbar").style.width = "0";
   document.getElementById("status-a").textContent = autoFallos.length ? "" : "// sin resultados — probá búsqueda manual";
   renderFallos(autoFallos, "res-a", false);
 }
 
-// ── BÚSQUEDA MANUAL: jurisprudencia + doctrina en paralelo ──
+// ── BÚSQUEDA MANUAL: jurisprudencia + doctrina + modelos en paralelo ──
 async function doManual() {
   const q = document.getElementById("manual-q").value.trim();
   if (!q) return;
@@ -517,7 +532,7 @@ async function doManual() {
   document.getElementById("n-man").textContent = "0";
 
   try {
-    const [jurisRes, docRes] = await Promise.all([
+    const [jurisRes, docRes, modRes] = await Promise.all([
       sbGet("jurisprudencia", {
         "or": `titulo.ilike.%${q}%,resumen_doctrina.ilike.%${q}%`,
         "select": "*", "limit": 12
@@ -525,12 +540,17 @@ async function doManual() {
       sbGet("doctrina", {
         "or": `titulo.ilike.%${q}%,descripcion.ilike.%${q}%,contenido.ilike.%${q}%`,
         "select": "*", "limit": 6
+      }).catch(() => []),
+      sbGet("modelos", {
+        "or": `titulo.ilike.%${q}%,descripcion.ilike.%${q}%,tipo_escrito.ilike.%${q}%`,
+        "select": "*", "limit": 4
       }).catch(() => [])
     ]);
 
     const juris = jurisRes.map(f => ({...f, _tipo:"juris"}));
     const doc   = docRes.map(f => ({...f, _tipo:"doctrina"}));
-    const total = [...juris, ...doc];
+    const mod   = modRes.map(f => ({...f, _tipo:"modelo"}));
+    const total = [...juris, ...doc, ...mod];
 
     document.getElementById("n-man").textContent = total.length;
     document.getElementById("status-m").textContent = total.length ? "" : "// sin resultados — probá con otra raíz";
@@ -548,25 +568,27 @@ function renderFallos(fallos, cid, isManual) {
   el.innerHTML = fallos.map((f, i) => {
     const id = (isManual ? "m" : "a") + i;
     const esDoc = f._tipo === "doctrina";
+    const esMod = f._tipo === "modelo";
 
-    // Texto principal y cita según tipo
     const titulo  = f.titulo || "—";
-    const fuente  = esDoc ? (f.tipo || "Doctrina") : (f.tribunal || "");
+    const fuente  = esDoc ? (f.tipo || "Doctrina") : esMod ? (f.tipo_escrito || "Modelo") : (f.tribunal || "");
     const holding = esDoc
       ? (f.descripcion || f.contenido || "").substring(0, 300)
-      : (f.resumen_doctrina || "");
-    const driveLink = esDoc && f.drive_url
-      ? `<a href="${f.drive_url}" target="_blank" style="font-family:var(--mono);font-size:10px;color:var(--purple);text-decoration:none;margin-left:auto;">↗ Drive</a>`
+      : esMod
+        ? (f.descripcion || "").substring(0, 300)
+        : (f.resumen_doctrina || "");
+    const driveLink = (esDoc || esMod) && f.drive_url
+      ? `<a href="${f.drive_url}" target="_blank" style="font-family:var(--mono);font-size:10px;color:var(--green);text-decoration:none;margin-left:auto;">↗ Drive</a>`
       : "";
-    const cita = esDoc
-      ? `${titulo} (${fuente}): "${holding}"`
-      : `${titulo} (${fuente}): "${holding}"`;
+    const cita = `${titulo} (${fuente}): "${holding}"`;
 
     const badgeHTML = esDoc
       ? `<span class="badge-doc">📚 Doctrina</span>`
-      : `<span class="badge-juris">⚖️ Jurisp.</span>`;
+      : esMod
+        ? `<span class="badge-mod">📝 Modelo</span>`
+        : `<span class="badge-juris">⚖️ Jurisp.</span>`;
 
-    const claseExtra = esDoc ? " doctrina" : (isManual ? " manual" : "");
+    const claseExtra = esDoc ? " doctrina" : esMod ? " modelo" : (isManual ? " manual" : "");
 
     return `<div class="fallo${claseExtra}">
       <div class="fallo-titulo">${titulo}</div>
@@ -594,7 +616,7 @@ function copyIA() {
   setTimeout(()=>{ b.textContent = "copiar"; }, 2000);
 }
 
-// ── IA: contexto unificado jurisprudencia + doctrina ──
+// ── IA: contexto unificado jurisprudencia + doctrina + modelos ──
 async function doIA() {
   const txt = document.getElementById("editor").value.trim();
   if (!txt) return;
@@ -606,9 +628,9 @@ async function doIA() {
 
   const ctx = expActual || { caratula:"Causa no seleccionada", estrategia:"", codemandados:"" };
 
-  // Separar jurisprudencia y doctrina del pool actual
   const jurisFallos = autoFallos.filter(f => f._tipo === "juris");
   const docFallos   = autoFallos.filter(f => f._tipo === "doctrina");
+  const modFallos   = autoFallos.filter(f => f._tipo === "modelo");
 
   let contextoBase = "";
   if (jurisFallos.length) {
@@ -621,6 +643,12 @@ async function doIA() {
     contextoBase += "\n\nDOCTRINA Y NORMATIVA RELEVANTE:\n";
     contextoBase += docFallos.map(f =>
       `- ${f.titulo} (${f.tipo || "Doctrina"}): ${f.descripcion || f.contenido || ""}`
+    ).join("\n");
+  }
+  if (modFallos.length) {
+    contextoBase += "\n\nMODELOS DE ESCRITOS PROPIOS DEL ESTUDIO:\n";
+    contextoBase += modFallos.map(f =>
+      `- ${f.titulo} (${f.tipo_escrito || "Modelo"}): ${f.descripcion || ""}`
     ).join("\n");
   }
   if (!contextoBase) contextoBase = "Sin referencias encontradas en la base de conocimiento.";
