@@ -491,21 +491,21 @@ async function autoSearch(txt) {
 
   const queries = ws.slice(0,4).flatMap(w => [
     sbGet("jurisprudencia", {
-      "or": `(titulo.ilike.*${w}%,resumen_doctrina.ilike.*${w}%)`,
+      "or": `(titulo.ilike.*${w}*,resumen_doctrina.ilike.*${w}*)`,
       "select": "*", "limit": 3
     }).then(d => {
       d.forEach(f => { if (!seenJ.has(f.titulo)) { seenJ.add(f.titulo); resJ.push({...f, _tipo:"juris"}); } });
     }).catch(() => {}),
 
     sbGet("doctrina", {
-      "or": `(titulo.ilike.*${w}%,descripcion.ilike.*${w}%,contenido.ilike.*${w}%)`,
+      "or": `(titulo.ilike.*${w}*,descripcion.ilike.*${w}*,contenido.ilike.*${w}*)`,
       "select": "*", "limit": 2
     }).then(d => {
       d.forEach(f => { if (!seenD.has(f.titulo)) { seenD.add(f.titulo); resD.push({...f, _tipo:"doctrina"}); } });
     }).catch(() => {}),
 
     sbGet("modelos", {
-      "or": `(titulo.ilike.*${w}%,descripcion.ilike.*${w}%,tipo_escrito.ilike.*${w}%)`,
+      "or": `(titulo.ilike.*${w}*,descripcion.ilike.*${w}*,tipo_escrito.ilike.*${w}*)`,
       "select": "*", "limit": 2
     }).then(d => {
       d.forEach(f => { if (!seenM.has(f.titulo)) { seenM.add(f.titulo); resM.push({...f, _tipo:"modelo"}); } });
@@ -534,15 +534,15 @@ async function doManual() {
   try {
     const [jurisRes, docRes, modRes] = await Promise.all([
       sbGet("jurisprudencia", {
-        "or": `(titulo.ilike.*${q}%,resumen_doctrina.ilike.*${q}%)`,
+        "or": `(titulo.ilike.*${q}*,resumen_doctrina.ilike.*${q}*)`,
         "select": "*", "limit": 12
       }).catch(() => []),
       sbGet("doctrina", {
-        "or": `(titulo.ilike.*${q}%,descripcion.ilike.*${q}%,contenido.ilike.*${q}%)`,
+        "or": `(titulo.ilike.*${q}*,descripcion.ilike.*${q}*,contenido.ilike.*${q}*)`,
         "select": "*", "limit": 6
       }).catch(() => []),
       sbGet("modelos", {
-        "or": `(titulo.ilike.*${q}%,descripcion.ilike.*${q}%,tipo_escrito.ilike.*${q}%)`,
+        "or": `(titulo.ilike.*${q}*,descripcion.ilike.*${q}*,tipo_escrito.ilike.*${q}*)`,
         "select": "*", "limit": 4
       }).catch(() => [])
     ]);
