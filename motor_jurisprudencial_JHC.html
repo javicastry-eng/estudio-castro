@@ -534,15 +534,15 @@ async function doManual() {
   try {
     const [jurisRes, docRes, modRes] = await Promise.all([
       sbGet("jurisprudencia", {
-        "or": `(titulo.ilike.%${w}%,resumen_doctrina.ilike.%${q}%)`,
+        "or": `(titulo.ilike.%${q}%,resumen_doctrina.ilike.%${q}%)`,
         "select": "*", "limit": 12
       }).catch(() => []),
       sbGet("doctrina", {
-        "or": `(titulo.ilike.%${w}%,descripcion.ilike.%${q}%,contenido.ilike.%${q}%)`,
+        "or": `(titulo.ilike.%${q}%,descripcion.ilike.%${q}%,contenido.ilike.%${q}%)`,
         "select": "*", "limit": 6
       }).catch(() => []),
       sbGet("modelos", {
-        "or": `(titulo.ilike.%${w}%,descripcion.ilike.%${q}%,tipo_escrito.ilike.%${q}%)`,
+        "or": `(titulo.ilike.%${q}%,descripcion.ilike.%${q}%,tipo_escrito.ilike.%${q}%)`,
         "select": "*", "limit": 4
       }).catch(() => [])
     ]);
