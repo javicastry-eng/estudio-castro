@@ -389,7 +389,7 @@ function resetConfig() {
 
 async function sbGet(table, params) {
   const H = { "apikey": SK, "Authorization": "Bearer " + SK };
-  const r = await fetch(`${SB}/rest/v1/${table}?` + new URLSearchParams(params), { headers: H });
+  const r = await fetch(`${SB}/rest/v1/${table}?` + Object.entries(params).map(([k,v])=>`${k}=${v}`).join('&'), { headers: H });
   if (!r.ok) throw new Error(r.status);
   return r.json();
 }
