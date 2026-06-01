@@ -223,7 +223,8 @@ try {
     // Clasificar con Claude usando el nombre del archivo
     var caption = msg.caption || "";
     Logger.log("Caption: [" + caption + "] fileName: [" + fileName + "] pdfText: [" + pdfText.substring(0,100) + "]");
-    var textoParaClasificar = "Archivo: " + fileName + ". " + (caption ? "Descripción: " + caption + ". " : "") + (pdfText && pdfText.length > 50 ? "Contenido: " + pdfText.substring(0, 1800) : "");
+    // pdfText primero — tiene el contenido real del documento (partes, tribunal, etc.)
+    var textoParaClasificar = (pdfText && pdfText.length > 50 ? "Contenido del documento: " + pdfText.substring(0, 1800) + "\n\n" : "") + "Nombre del archivo: " + fileName + (caption ? "\nDescripción del usuario: " + caption : "");
     var clasificacion = clasificarTextoConClaude(textoParaClasificar);
     if (!clasificacion) clasificacion = { tipo: "MODELO", area: "GENERAL", titulo: fileName, resumen: "" };
 
@@ -310,7 +311,7 @@ function clasificarTextoConClaude(texto) {
   var payload = {
     model: "claude-haiku-4-5-20251001",
     max_tokens: 300,
-    system: "Clasifica texto juridico argentino. Devuelve SOLO JSON con campos: tipo (JURISPRUDENCIA, DOCTRINA, MODELO o IGNORAR), area (LABORAL, CIVIL, CONTRATOS, FAMILIA, SUCESIONES o GENERAL), titulo y resumen. REGLAS: (1) Si el texto menciona LCT, despido, indemnización, empleador, trabajador, ART, accidente laboral, SECLO, CNAT, jornada, salario, telegrama laboral, ratificación de acuerdo laboral → area LABORAL. (2) Resoluciones ARCA AFIP MTEySS ANSES sobre trabajo → tipo DOCTRINA area LABORAL. (3) Escritos, demandas, recursos, acuerdos sobre relación de empleo → tipo MODELO area LABORAL. (4) Solo IGNORAR para contenido claramente no juridico. (5) Si el nombre del archivo contiene: telegrama, telegramas, CD, carta documento, despido, indemnización, liquidación, SECLO, demanda, escrito → area LABORAL obligatoriamente.",
+    system: "Clasifica texto juridico argentino. Devuelve SOLO JSON con campos: tipo (JURISPRUDENCIA, DOCTRINA, MODELO o IGNORAR), area (LABORAL, CIVIL, CONTRATOS, FAMILIA, SUCESIONES o GENERAL), titulo y resumen. REGLAS DE TIPO — aplicar en este orden: (1) JURISPRUDENCIA: el texto menciona partes enfrentadas (apellido vs., apellido c/, contra empresa), tribunal, sala, cámara, juzgado, número de expediente, sentencia, fallo, resolución judicial — aunque el usuario describa los temas tratados. (2) DOCTRINA: resoluciones ARCA AFIP MTEySS ANSES, normativa, circulares, leyes comentadas. (3) MODELO: escritos procesales redactados en primera persona (demanda, recurso, apelación, contesta, alega, acompaña). (4) IGNORAR: contenido claramente no juridico. REGLAS DE AREA: LCT, despido, jornada, salario, empleador, trabajador, ART, SECLO, CNAT → LABORAL. Sucesion, heredero, testamento, declaratoria → SUCESIONES.",
     messages: [{ role: "user", content: texto }]
   };
   var options = {
@@ -357,9 +358,10 @@ function guardarEnSupabase(tabla, clasificacion, driveUrl, nombreArchivo) {
       titulo: clasificacion.titulo || nombreArchivo,
       area: clasificacion.area || "GENERAL",
       descripcion: clasificacion.resumen || "Documento cargado desde Telegram",
-      tipo_escrito: "Modelo",
+      tipo_escrito: clasificacion.tipo === "MODELO" ? "Modelo" : (clasificacion.tipo || "Modelo"),
       drive_url: driveUrl,
-      fuente: "Telegram @mujeresabogadas"
+      FUENTE: "Telegram @mujeresabogadas",
+      fecha_carga: new Date().toISOString()
     };
     textoEmbed = (payload.titulo + " " + payload.descripcion).substring(0, 8000);
   }
