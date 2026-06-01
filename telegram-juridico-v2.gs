@@ -228,9 +228,11 @@ try {
     var clasificacion = clasificarTextoConClaude(textoParaClasificar);
     if (!clasificacion) clasificacion = { tipo: "MODELO", area: "GENERAL", titulo: fileName, resumen: "" };
 
-    // Safety net: si el PDF tiene partes enfrentadas (vs. / c/) → JURISPRUDENCIA sin depender de Claude
+    // Safety net: si el PDF tiene partes enfrentadas → JURISPRUDENCIA sin depender de Claude
     if (pdfText && pdfText.length > 50 && clasificacion.tipo !== "JURISPRUDENCIA") {
-      if (/[A-Za-záéíóúñÁÉÍÓÚÑ][\w\s,]+\s+(vs?\.|c\/)\s+[A-Za-záéíóúñÁÉÍÓÚÑ]/i.test(pdfText)) {
+      var tienePartes = pdfText.indexOf(" vs. ") !== -1 || pdfText.indexOf(" vs ") !== -1 || pdfText.indexOf(" c/ ") !== -1 || pdfText.indexOf(" c/") !== -1;
+      Logger.log("Safety net check — tienePartes: " + tienePartes + " tipo actual: " + clasificacion.tipo);
+      if (tienePartes) {
         Logger.log("Override → JURISPRUDENCIA (partes enfrentadas detectadas en pdfText)");
         clasificacion.tipo = "JURISPRUDENCIA";
         if (!clasificacion.area || clasificacion.area === "GENERAL") clasificacion.area = "LABORAL";
