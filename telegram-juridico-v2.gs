@@ -247,14 +247,17 @@ try {
     var guardado = guardarEnSupabase(tabla, clasificacion, driveUrl, fileName);
 
     var emoji = tabla === "jurisprudencia" ? "⚖️" : tabla === "doctrina" ? "📚" : "📝";
-    sendMessage(chatId,
-      emoji + " *Guardado exitosamente*\n\n" +
-      "*Archivo:* " + fileName + "\n" +
-      "*Tabla:* " + tabla + "\n" +
-      "*Área:* " + clasificacion.area + "\n" +
-      "*Drive:* [Ver archivo](" + driveUrl + ")\n\n" +
-      "_En 15 min MODELOS-CLASIFICAR lo procesa automáticamente._"
-    );
+    if (guardado) {
+      sendMessage(chatId,
+        emoji + " *Guardado exitosamente*\n\n" +
+        "*Archivo:* " + fileName + "\n" +
+        "*Tabla:* " + tabla + "\n" +
+        "*Área:* " + clasificacion.area + "\n" +
+        "*Drive:* [Ver archivo](" + driveUrl + ")"
+      );
+    } else {
+      sendMessage(chatId, "❌ Error al guardar en Supabase. Revisá los logs.");
+    }
 
   } catch(err) {
     Logger.log("Error procesarDocumento: " + err.message);
@@ -382,6 +385,7 @@ function guardarEnSupabase(tabla, clasificacion, driveUrl, nombreArchivo) {
     contentType: "application/json",
     headers: {
       "apikey": SB_KEY,
+      "Authorization": "Bearer " + SB_KEY,
       "Prefer": "return=representation"
     },
     payload: JSON.stringify(payload),
@@ -392,6 +396,7 @@ function guardarEnSupabase(tabla, clasificacion, driveUrl, nombreArchivo) {
     var res = UrlFetchApp.fetch(SB_URL + "/rest/v1/" + tabla, options);
     var code = res.getResponseCode();
     Logger.log("Supabase " + tabla + ": " + code);
+    if (code !== 201) Logger.log("Supabase error body: " + res.getContentText().substring(0, 300));
 
     if (code === 201) {
       var inserted = JSON.parse(res.getContentText());
