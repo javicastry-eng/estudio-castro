@@ -228,6 +228,15 @@ try {
     var clasificacion = clasificarTextoConClaude(textoParaClasificar);
     if (!clasificacion) clasificacion = { tipo: "MODELO", area: "GENERAL", titulo: fileName, resumen: "" };
 
+    // Safety net: si el PDF tiene partes enfrentadas (vs. / c/) → JURISPRUDENCIA sin depender de Claude
+    if (pdfText && pdfText.length > 50 && clasificacion.tipo !== "JURISPRUDENCIA") {
+      if (/[A-Za-záéíóúñÁÉÍÓÚÑ][\w\s,]+\s+(vs?\.|c\/)\s+[A-Za-záéíóúñÁÉÍÓÚÑ]/i.test(pdfText)) {
+        Logger.log("Override → JURISPRUDENCIA (partes enfrentadas detectadas en pdfText)");
+        clasificacion.tipo = "JURISPRUDENCIA";
+        if (!clasificacion.area || clasificacion.area === "GENERAL") clasificacion.area = "LABORAL";
+      }
+    }
+
     // Guardar en Supabase
     var tabla = clasificacion.tipo === "JURISPRUDENCIA" ? "jurisprudencia"
       : clasificacion.tipo === "DOCTRINA" ? "doctrina"
