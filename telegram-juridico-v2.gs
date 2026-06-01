@@ -329,9 +329,10 @@ function clasificarTextoConClaude(texto) {
   return null;
 }
 
-// ── GUARDAR EN SUPABASE ──
+// ── GUARDAR EN SUPABASE + EMBEDDING AUTOMÁTICO ──
 function guardarEnSupabase(tabla, clasificacion, driveUrl, nombreArchivo) {
-  var payload;
+  var payload, textoEmbed;
+
   if (tabla === "jurisprudencia") {
     payload = {
       titulo: clasificacion.titulo || nombreArchivo,
@@ -340,6 +341,7 @@ function guardarEnSupabase(tabla, clasificacion, driveUrl, nombreArchivo) {
       fuente: "Telegram @mujeresabogadas",
       drive_url: driveUrl
     };
+    textoEmbed = (payload.titulo + " " + payload.resumen_doctrina).substring(0, 8000);
   } else if (tabla === "doctrina") {
     payload = {
       titulo: clasificacion.titulo || nombreArchivo,
@@ -349,6 +351,7 @@ function guardarEnSupabase(tabla, clasificacion, driveUrl, nombreArchivo) {
       fuente: "Telegram @mujeresabogadas",
       drive_url: driveUrl
     };
+    textoEmbed = (payload.titulo + " " + payload.descripcion).substring(0, 8000);
   } else {
     payload = {
       titulo: clasificacion.titulo || nombreArchivo,
@@ -358,13 +361,15 @@ function guardarEnSupabase(tabla, clasificacion, driveUrl, nombreArchivo) {
       drive_url: driveUrl,
       fuente: "Telegram @mujeresabogadas"
     };
+    textoEmbed = (payload.titulo + " " + payload.descripcion).substring(0, 8000);
   }
 
   var options = {
-    method: "post", contentType: "application/json",
+    method: "post",
+    contentType: "application/json",
     headers: {
       "apikey": SB_KEY,
-      "Prefer": "return=minimal"
+      "Prefer": "return=representation"
     },
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
@@ -372,11 +377,66 @@ function guardarEnSupabase(tabla, clasificacion, driveUrl, nombreArchivo) {
 
   try {
     var res = UrlFetchApp.fetch(SB_URL + "/rest/v1/" + tabla, options);
-    Logger.log("Supabase " + tabla + ": " + res.getResponseCode());
-    return res.getResponseCode() === 201;
+    var code = res.getResponseCode();
+    Logger.log("Supabase " + tabla + ": " + code);
+
+    if (code === 201) {
+      var inserted = JSON.parse(res.getContentText());
+      if (Array.isArray(inserted) && inserted[0] && inserted[0].id) {
+        var newId = inserted[0].id;
+        var emb = generarEmbedding(textoEmbed);
+        if (emb) {
+          guardarEmbedding(tabla, newId, emb);
+          Logger.log("✅ Embedding generado — " + tabla + " id=" + newId);
+        }
+      }
+      return true;
+    }
+    return false;
   } catch(err) {
     Logger.log("Error Supabase: " + err.message);
     return false;
+  }
+}
+
+// ── GENERAR EMBEDDING CON VOYAGE AI ──
+function generarEmbedding(texto) {
+  try {
+    var res = UrlFetchApp.fetch(VOYAGE_API, {
+      method: "post",
+      contentType: "application/json",
+      headers: { "Authorization": "Bearer " + VOYAGE_KEY },
+      payload: JSON.stringify({ model: "voyage-4-lite", input: [texto] }),
+      muteHttpExceptions: true
+    });
+    var data = JSON.parse(res.getContentText());
+    if (data.data && data.data[0] && data.data[0].embedding) {
+      return data.data[0].embedding;
+    }
+    Logger.log("Voyage sin embedding: " + res.getContentText().substring(0, 200));
+  } catch(e) {
+    Logger.log("Error generarEmbedding: " + e.message);
+  }
+  return null;
+}
+
+// ── GUARDAR EMBEDDING EN SUPABASE ──
+function guardarEmbedding(tabla, id, embedding) {
+  try {
+    var res = UrlFetchApp.fetch(SB_URL + "/rest/v1/" + tabla + "?id=eq." + id, {
+      method: "patch",
+      contentType: "application/json",
+      headers: {
+        "apikey": SB_KEY,
+        "Authorization": "Bearer " + SB_KEY,
+        "Prefer": "return=minimal"
+      },
+      payload: JSON.stringify({ embedding: embedding }),
+      muteHttpExceptions: true
+    });
+    Logger.log("Embedding PATCH " + tabla + " id=" + id + " → " + res.getResponseCode());
+  } catch(e) {
+    Logger.log("Error guardarEmbedding: " + e.message);
   }
 }
 
