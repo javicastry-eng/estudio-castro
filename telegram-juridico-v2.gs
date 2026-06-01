@@ -7,6 +7,8 @@ const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const DRIVE_ROOT = "1IfPreFIXWtSNsgpxRYjqot6KjoQQhBAJ";
 const INBOX_NAME = "INBOX-TELEGRAM";
 const CORRECT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxMH1a7KEmA0mLbfNvDT47-eeAd1rNgLFcLPMmTS9HRMi5UnF4CFrZnp8c9wqcgCEBPdA/exec";
+const VOYAGE_KEY = "pa-IrStbMvXH8UPJHLeDLjoJhMfK1pmg4lY20e6gKyFoCf";
+const VOYAGE_API = "https://api.voyageai.com/v1/embeddings";
 function doPost(e) {
     var output = ContentService.createTextOutput("OK");
     try {
@@ -106,6 +108,22 @@ function handleUpdate(update) {
   }
   if (text === "/causas") {
     sendMessage(chatId, "📂 *Causas activas:*\n\n• Rodríguez c/ Holcim y otros — Expte. 15905/2026 — JNT N°16 CNAT");
+    return;
+  }
+
+  if (text.toLowerCase().startsWith("/busqueda")) {
+    var query = text.replace(/^\/busqueda\s*/i, "").trim();
+    if (!query) {
+      sendMessage(chatId, "🔍 *Buscador jurídico*\n\nEscribí el tema:\n\n`/busqueda despido indirecto`\n`/busqueda art.30 solidaridad`\n`/busqueda ius variandi`\n`/busqueda ley 27802`");
+      return;
+    }
+    buscarSemantico(chatId, query);
+    return;
+  }
+
+  // Comando desconocido
+  if (text.startsWith("/")) {
+    sendMessage(chatId, "❓ Comando no reconocido.\n\n/ayuda para ver los comandos disponibles.");
     return;
   }
 
@@ -239,7 +257,7 @@ function getOrCreateInbox() {
 // ── CLASIFICAR POR NOMBRE DE ARCHIVO CON CLAUDE ──
 function clasificarPorNombre(fileName) {
   var payload = {
-    model: "claude-sonnet-4-20250514",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 200,
     system: "Clasifica archivos juridicos argentinos por su nombre y contenido. Devuelve SOLO JSON sin texto adicional: {\"tipo\": \"JURISPRUDENCIA|DOCTRINA|MODELO|GENERAL\", \"area\": \"LABORAL|CIVIL|CONTRATOS|FAMILIA|SUCESIONES|GENERAL\", \"titulo\": \"titulo limpio sin extension\"}. SUCESIONES incluye declaratorias, testamentos, intestato. LABORAL incluye despidos, ART, SECLO, LCT. JURISPRUDENCIA son fallos y sentencias. DOCTRINA son resoluciones y normativa. MODELO son escritos y presentaciones.",
     messages: [{ role: "user", content: "Clasifica este archivo juridico argentino.Si el nombre dice CUMPLE, INTIMACION, ESCRITO, DEMANDA, CONTESTA, ALEGA, ACOMPAÑA: tipo MODELO. Si dice FALLO, SENTENCIA, RESOLUCION: tipo JURISPRUDENCIA. Si dice DECLARATORIA, SUCESION, INTESTATO: area SUCESIONES." + fileName }]
@@ -263,7 +281,7 @@ function clasificarPorNombre(fileName) {
 // ── CLASIFICAR TEXTO CON CLAUDE ──
 function clasificarTextoConClaude(texto) {
   var payload = {
-    model: "claude-sonnet-4-20250514",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 300,
     system: "Clasifica texto juridico argentino. Devuelve SOLO JSON con campos: tipo (JURISPRUDENCIA, DOCTRINA, MODELO o IGNORAR), area (LABORAL, CIVIL, CONTRATOS, FAMILIA, SUCESIONES o GENERAL), titulo y resumen. REGLAS: (1) Si el texto menciona LCT, despido, indemnización, empleador, trabajador, ART, accidente laboral, SECLO, CNAT, jornada, salario, telegrama laboral, ratificación de acuerdo laboral → area LABORAL. (2) Resoluciones ARCA AFIP MTEySS ANSES sobre trabajo → tipo DOCTRINA area LABORAL. (3) Escritos, demandas, recursos, acuerdos sobre relación de empleo → tipo MODELO area LABORAL. (4) Solo IGNORAR para contenido claramente no juridico. (5) Si el nombre del archivo contiene: telegrama, telegramas, CD, carta documento, despido, indemnización, liquidación, SECLO, demanda, escrito → area LABORAL obligatoriamente.",
     messages: [{ role: "user", content: texto }]
@@ -338,7 +356,7 @@ function guardarEnSupabase(tabla, clasificacion, driveUrl, nombreArchivo) {
 // ── CLAUDE TEXTO LIBRE ──
 function consultarClaude(texto) {
   var payload = {
-    model: "claude-sonnet-4-20250514",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 400,
     system: "Sos el asistente jurídico del Estudio Castro, Dr. Javier Horacio Castro (T° 102 F° 174 CPACF), laboralista en Argentina. Respondé en español rioplatense, informal pero profesional. Máximo 3-4 líneas.",
     messages: [{ role: "user", content: texto }]
@@ -458,4 +476,74 @@ function resetearTodo() {
   PropertiesService.getScriptProperties().deleteAllProperties();
   CacheService.getScriptCache().removeAll(['pending_' + '348822255', 'pending_' + '348822261']);
   Logger.log("✅ Todo reseteado");
+}
+
+// ── BÚSQUEDA SEMÁNTICA CON VOYAGE AI ──
+function buscarSemantico(chatId, query) {
+  try {
+    // Generar embedding con Voyage AI
+    var embRes = UrlFetchApp.fetch(VOYAGE_API, {
+      method: "post",
+      contentType: "application/json",
+      headers: { "Authorization": "Bearer " + VOYAGE_KEY },
+      payload: JSON.stringify({ model: "voyage-4-lite", input: [query] }),
+      muteHttpExceptions: true
+    });
+
+    var embData = JSON.parse(embRes.getContentText());
+
+    if (embData.data && embData.data[0] && embData.data[0].embedding) {
+      var embedding = embData.data[0].embedding;
+
+      // Llamar RPC buscar_juridico en Supabase
+      var rpcRes = UrlFetchApp.fetch(SB_URL + "/rest/v1/rpc/buscar_juridico", {
+        method: "post",
+        contentType: "application/json",
+        headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY },
+        payload: JSON.stringify({ query_embedding: embedding, match_count: 5 }),
+        muteHttpExceptions: true
+      });
+
+      var results = JSON.parse(rpcRes.getContentText());
+
+      if (Array.isArray(results) && results.length > 0) {
+        var msg = "⚖️ *" + results.length + " resultado(s) para:* _" + query + "_\n\n";
+        results.slice(0, 5).forEach(function(r) {
+          var score = Math.round((r.score || 0) * 100);
+          var icon = r.tabla === "jurisprudencia" ? "⚖️" : r.tabla === "doctrina" ? "📚" : "📝";
+          msg += icon + " *" + (r.titulo || "Sin título").substring(0, 70) + "*\n";
+          if (r.resumen) msg += "_" + r.resumen.substring(0, 130) + "_\n";
+          msg += "Relevancia: " + score + "%\n\n";
+        });
+        sendMessage(chatId, msg);
+        return;
+      }
+    }
+  } catch(e) {
+    Logger.log("Error búsqueda semántica Voyage: " + e.message);
+  }
+
+  // Fallback: búsqueda por palabras clave
+  try {
+    var fbRes = UrlFetchApp.fetch(
+      SB_URL + "/rest/v1/jurisprudencia?or=(titulo.ilike.*" + encodeURIComponent(query) + "*,resumen_doctrina.ilike.*" + encodeURIComponent(query) + "*)&select=titulo,resumen_doctrina,tribunal&limit=5",
+      { headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }, muteHttpExceptions: true }
+    );
+    var fbData = JSON.parse(fbRes.getContentText());
+
+    if (Array.isArray(fbData) && fbData.length > 0) {
+      var msg = "🔍 *" + fbData.length + " resultado(s) para:* _" + query + "_ (palabras clave)\n\n";
+      fbData.forEach(function(r) {
+        msg += "⚖️ *" + (r.titulo || "Sin título").substring(0, 70) + "*\n";
+        if (r.resumen_doctrina) msg += "_" + r.resumen_doctrina.substring(0, 130) + "_\n";
+        msg += "\n";
+      });
+      sendMessage(chatId, msg);
+    } else {
+      sendMessage(chatId, "❌ Sin resultados para: _" + query + "_\n\nProbá con otras palabras.");
+    }
+  } catch(e2) {
+    Logger.log("Error fallback keyword: " + e2.message);
+    sendMessage(chatId, "❌ Error en la búsqueda: " + e2.message);
+  }
 }
