@@ -83,6 +83,13 @@ textarea::placeholder{color:var(--text3)}
 .btn-ia{width:100%;padding:11px;background:var(--blue-dim);border:1px solid var(--blue);color:var(--blue);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;cursor:pointer;font-weight:500}
 .btn-ia:hover{background:var(--blue);color:#fff}
 .btn-ia:disabled{opacity:.3;cursor:not-allowed}
+.btn-juris{width:100%;padding:11px;background:var(--purple-dim);border:1px solid var(--purple);color:var(--purple);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;cursor:pointer;font-weight:500}
+.btn-juris:hover{background:var(--purple);color:#fff}
+.btn-juris:disabled{opacity:.3;cursor:not-allowed}
+.ia-juris-wrap{display:none;margin-top:4px}
+.ia-juris-wrap.show{display:block}
+.ia-juris-header{font-family:var(--mono);font-size:10px;color:var(--purple);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.step-label{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;margin-top:2px}
 .sugerencias-wrap{display:none}
 .sugerencias-wrap.show{display:block}
 .sug-header{font-family:var(--mono);font-size:10px;color:var(--purple);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;display:flex;align-items:center;gap:8px}
@@ -194,12 +201,21 @@ textarea::placeholder{color:var(--text3)}
 
     <div class="sugerencias-wrap" id="sug-wrap">
       <div class="sug-header">
-        ◈ fallos sugeridos
+        ◈ fallos locales sugeridos
         <span style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-left:auto" id="sug-tipo"></span>
       </div>
       <div id="sug-list"></div>
     </div>
 
+    <div class="step-label">— paso 2: buscar jurisprudencia online con IA —</div>
+    <button class="btn-juris" id="btn-juris" onclick="buscarJurisprudenciaConIA()" disabled>◈ buscar jurisprudencia con IA</button>
+
+    <div class="ia-juris-wrap" id="ia-juris-wrap">
+      <div class="ia-juris-header">◈ jurisprudencia sugerida por Claude</div>
+      <div id="ia-juris-out"></div>
+    </div>
+
+    <div class="step-label">— paso 3: mejorar el argumento —</div>
     <button class="btn-ia" id="btn-ia" onclick="doIA()" disabled>◈ mejorar argumento con IA</button>
 
     <div class="analysis-wrap" id="ia-wrap">
@@ -511,6 +527,77 @@ function copyIA(){
   b.textContent="✓ copiado";setTimeout(()=>{b.textContent="copiar";},2000);
 }
 
+async function buscarJurisprudenciaConIA(){
+  const txt=document.getElementById("editor").value.trim();if(!txt)return;
+  const btn=document.getElementById("btn-juris");
+  btn.disabled=true;btn.textContent="◈ buscando...";
+  document.getElementById("ia-juris-wrap").className="ia-juris-wrap show";
+  const out=document.getElementById("ia-juris-out");
+  out.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3)">Claude está buscando jurisprudencia relevante...</div>';
+  const ctx=expActual||{};
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-6",max_tokens:900,
+        messages:[{role:"user",content:`Sos asistente jurídico especializado en derecho laboral argentino (CNAT, CSJN, LCT).
+
+CAUSA: ${ctx.caratula||"No especificada"}
+${ctx.estrategia?"ESTRATEGIA: "+ctx.estrategia:""}
+
+ARGUMENTO DEL ABOGADO:
+${txt}
+
+TAREA: Citá exactamente 4 fuentes jurídicas RELEVANTES para este argumento. Priorizá fallos reales de CNAT y CSJN que conozcas con certeza, normativa aplicable y doctrina laboral reconocida.
+
+Respondé SOLO con JSON (sin markdown ni texto adicional):
+[
+  {"titulo":"nombre del fallo o norma","fuente":"Sala/Tribunal/Año o Ley N°/Art.","relevancia":"por qué aplica — 1 línea concreta","cita":"holding clave o texto del artículo"},
+  {"titulo":"...","fuente":"...","relevancia":"...","cita":"..."},
+  {"titulo":"...","fuente":"...","relevancia":"...","cita":"..."},
+  {"titulo":"...","fuente":"...","relevancia":"...","cita":"..."}
+]
+
+IMPORTANTE: Solo citá lo que conozcas con certeza. Si no estás seguro del nombre exacto de un fallo, usá doctrina o normativa en su lugar.`}]
+      })
+    });
+    const data=await res.json();
+    const rawText=(data.content||[]).map(b=>b.text||"").join("").trim();
+    let sugerencias=[];
+    try{const m=rawText.match(/\[[\s\S]*\]/);if(m)sugerencias=JSON.parse(m[0]);}catch(e){}
+    if(sugerencias.length>0){
+      renderIAJuris(sugerencias);
+      const iaFallos=sugerencias.map(s=>({
+        titulo:s.titulo,_tipo:"juris",
+        resumen_doctrina:s.cita||s.relevancia,
+        tribunal:s.fuente,drive_url:"",_fromIA:true
+      }));
+      autoFallos=[...iaFallos,...autoFallos.filter(f=>!f._fromIA)];
+      document.getElementById("n-auto").textContent=autoFallos.length;
+      renderFallos(autoFallos,"res-a",false);
+      switchTab("a");
+    }else{
+      out.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3)">No pude estructurar sugerencias. Escribí más texto en el editor y volvé a intentar.</div>';
+    }
+  }catch(e){out.innerHTML='<div style="color:var(--red);font-family:var(--mono);font-size:11px">Error: '+e.message+'</div>';}
+  btn.disabled=false;btn.textContent="◈ buscar jurisprudencia con IA";
+}
+
+function renderIAJuris(sugerencias){
+  const container=document.getElementById("ia-juris-out");
+  container.innerHTML=sugerencias.map((s,i)=>{
+    const cita=`${s.titulo} (${s.fuente}): "${s.cita||s.relevancia}"`;
+    return`<div style="border-left:2px solid var(--purple);padding:8px 12px;margin-bottom:8px;background:var(--purple-dim);border-radius:0 4px 4px 0">
+      <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px">${s.titulo}</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--purple);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">${s.fuente}</div>
+      <div style="font-size:11px;color:var(--amber);margin-bottom:4px;font-style:italic">${s.relevancia}</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:6px">"${s.cita||""}"</div>
+      <button class="btn-cita" id="iaj-${i}" onclick="copyCita('iaj-${i}',\`${cita.replace(/`/g,"'")}\`)">copiar cita</button>
+    </div>`;
+  }).join("");
+}
+
 async function doIA(){
   const txt=document.getElementById("editor").value.trim();if(!txt)return;
   const btn=document.getElementById("btn-ia");
@@ -594,7 +681,9 @@ const ed=document.getElementById("editor");
 ed.addEventListener("input",function(){
   const txt=this.value;
   document.getElementById("chars").textContent=txt.length+" car.";
-  document.getElementById("btn-ia").disabled=txt.trim().length<20;
+  const corto=txt.trim().length<20;
+  document.getElementById("btn-ia").disabled=corto;
+  document.getElementById("btn-juris").disabled=corto;
   if(timer)clearTimeout(timer);
   if(txt.trim().length>=30){
     timer=setTimeout(()=>autoSearch(txt),2000);
