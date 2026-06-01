@@ -9,6 +9,33 @@ const INBOX_NAME = "INBOX-TELEGRAM";
 const CORRECT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxMH1a7KEmA0mLbfNvDT47-eeAd1rNgLFcLPMmTS9HRMi5UnF4CFrZnp8c9wqcgCEBPdA/exec";
 const VOYAGE_KEY = "pa-IrStbMvXH8UPJHLeDLjoJhMfK1pmg4lY20e6gKyFoCf";
 const VOYAGE_API = "https://api.voyageai.com/v1/embeddings";
+// ── POLLING — corre cada 1 minuto via trigger Time-Driven ──
+function pollUpdates() {
+  var props = PropertiesService.getScriptProperties();
+  var lastId = parseInt(props.getProperty("poll_last_update_id") || "0");
+
+  try {
+    var url = TELEGRAM_API + "/getUpdates?offset=" + (lastId + 1) + "&limit=10&timeout=0";
+    var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    var data = JSON.parse(res.getContentText());
+
+    if (!data.ok || !data.result || data.result.length === 0) return;
+
+    data.result.forEach(function(update) {
+      try {
+        handleUpdate(update);
+      } catch(e) {
+        Logger.log("Error handleUpdate id=" + update.update_id + ": " + e.message);
+      }
+      lastId = update.update_id;
+    });
+
+    props.setProperty("poll_last_update_id", String(lastId));
+  } catch(e) {
+    Logger.log("Error pollUpdates: " + e.message);
+  }
+}
+
 function doPost(e) {
     var output = ContentService.createTextOutput("OK");
     try {
