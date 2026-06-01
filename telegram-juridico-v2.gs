@@ -351,10 +351,9 @@ function guardarEnSupabase(tabla, clasificacion, driveUrl, nombreArchivo) {
   if (tabla === "jurisprudencia") {
     payload = {
       titulo: clasificacion.titulo || nombreArchivo,
-      area: clasificacion.area || "GENERAL",
+      AREA: clasificacion.area || "GENERAL",
       resumen_doctrina: clasificacion.resumen || "Documento cargado desde Telegram",
-      fuente: "Telegram @mujeresabogadas",
-      drive_url: driveUrl
+      DRIVE_URL: driveUrl
     };
     textoEmbed = (payload.titulo + " " + payload.resumen_doctrina).substring(0, 8000);
   } else if (tabla === "doctrina") {
