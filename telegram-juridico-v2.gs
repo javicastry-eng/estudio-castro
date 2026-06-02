@@ -148,9 +148,17 @@ function handleUpdate(update) {
     return;
   }
 
+  // ── AGENTE JURÍDICO (add-on) ──
+  if (text === "/agente")                                           { cmdAgente(chatId); return; }
+  if (text.toLowerCase().startsWith("/buscar"))                    { cmdBuscar(chatId, text.replace(/^\/buscar\s*/i,"").trim()); return; }
+  if (text.toLowerCase().startsWith("/argumentar"))                { cmdArgumentar(chatId, text.replace(/^\/argumentar\s*/i,"").trim()); return; }
+  if (text.toLowerCase().startsWith("/causa") && text.length > 6) { cmdCausa(chatId, text.replace(/^\/causa\s*/i,"").trim()); return; }
+  if (text.toLowerCase().startsWith("/redactar"))                  { cmdRedactar(chatId, text.replace(/^\/redactar\s*/i,"").trim()); return; }
+  if (text.toLowerCase().startsWith("/ley"))                       { cmdLey(chatId, text.replace(/^\/ley\s*/i,"").trim()); return; }
+
   // Comando desconocido
   if (text.startsWith("/")) {
-    sendMessage(chatId, "❓ Comando no reconocido.\n\n/ayuda para ver los comandos disponibles.");
+    sendMessage(chatId, "❓ Comando no reconocido.\n\n/ayuda — comandos de captura\n/agente — comandos jurídicos");
     return;
   }
 
@@ -656,3 +664,238 @@ function buscarSemantico(chatId, query) {
     sendMessage(chatId, "❌ Error en la búsqueda: " + e2.message);
   }
 }
+
+// ============================================================
+// AGENTE JURÍDICO — ADD-ON v1.0
+// Bloque independiente — no modifica funciones existentes
+// Comandos: /agente /buscar /argumentar /causa /redactar /ley
+// ============================================================
+
+function cmdAgente(chatId) {
+  sendMessage(chatId,
+    "🤖 *AGENTE JURÍDICO — Estudio Castro*\n\n" +
+    "*Comandos disponibles:*\n\n" +
+    "🔍 `/busqueda [tema]` — Busca fallos por similitud semántica\n" +
+    "⚖️ `/argumentar [tema]` — Genera argumento con citas listo para escrito\n" +
+    "📁 `/causa [nombre]` — Ficha de la causa desde Supabase\n" +
+    "📝 `/redactar [tipo]` — Borrador de escrito judicial\n" +
+    "📖 `/ley [norma] [art]` — Texto actualizado del artículo\n\n" +
+    "*Ejemplos:*\n" +
+    "• `/busqueda solidaridad art.30 LCT`\n" +
+    "• `/argumentar fraude laboral interposición personas`\n" +
+    "• `/causa holcim`\n" +
+    "• `/redactar intimacion despido indirecto`\n" +
+    "• `/ley LCT 245`"
+  );
+}
+
+function cmdBuscar(chatId, tema) {
+  if (!tema) {
+    sendMessage(chatId, "🔍 Usá: `/buscar despido indirecto ius variandi`\n\nO usá `/busqueda [tema]` para búsqueda semántica.");
+    return;
+  }
+  // Redirige a la búsqueda semántica existente con Voyage AI
+  buscarSemantico(chatId, tema);
+}
+
+function cmdArgumentar(chatId, tema) {
+  if (!tema) {
+    sendMessage(chatId,
+      "⚖️ *GENERAR ARGUMENTO*\n\n" +
+      "Usá: `/argumentar solidaridad art.30 LCT`\n\n" +
+      "Ejemplos:\n" +
+      "• `/argumentar despido indirecto cambio horario`\n" +
+      "• `/argumentar fraude laboral interposición personas`\n" +
+      "• `/argumentar deuda de valor CCCN 772`"
+    );
+    return;
+  }
+
+  sendMessage(chatId, "⚖️ Buscando jurisprudencia y generando argumento sobre: _" + tema + "_...");
+
+  // Buscar fallos locales relevantes
+  var fallos = agenteBuscarLocal(tema);
+  var contexto = "";
+  if (fallos.length > 0) {
+    contexto = "JURISPRUDENCIA DE LA BASE:\n";
+    fallos.slice(0, 5).forEach(function(f) {
+      contexto += "- " + f.titulo + " (" + (f.tribunal || "") + "): " + (f.resumen_doctrina || f.descripcion || "").substring(0, 200) + "\n";
+    });
+  } else {
+    contexto = "Sin jurisprudencia específica en la base local. Elaborar desde normativa vigente.";
+  }
+
+  var prompt =
+    "Sos el Dr. Javier Castro, abogado laboralista argentino (CPACF T°102 F°174), especialista en CNAT.\n\n" +
+    "TEMA: " + tema + "\n\n" +
+    "JURISPRUDENCIA DISPONIBLE:\n" + contexto + "\n\n" +
+    "Redactá un argumento jurídico en estilo escrito judicial argentino. Incluí:\n" +
+    "1. Fundamento normativo (artículos y leyes)\n" +
+    "2. Citas de jurisprudencia con tribunal\n" +
+    "3. Conclusión aplicada al caso\n" +
+    "Máximo 350 palabras. Listo para copiar en un escrito.";
+
+  var argumento = agenteCallClaude(prompt, 700);
+  sendMessage(chatId,
+    "⚖️ *ARGUMENTO: " + tema.substring(0, 50).toUpperCase() + "*\n\n" +
+    argumento + "\n\n" +
+    "---\n💡 Para un escrito completo: `/redactar [tipo]`"
+  );
+}
+
+function cmdCausa(chatId, nombre) {
+  sendMessage(chatId, "📁 Buscando causa...");
+  try {
+    var url = SB_URL + "/rest/v1/expedientes?select=*&order=fecha_inicio.desc&limit=10";
+    if (nombre && nombre.length > 2) {
+      url = SB_URL + "/rest/v1/expedientes?caratula=ilike.*" + encodeURIComponent(nombre) + "*&select=*&limit=5";
+    }
+    var r = UrlFetchApp.fetch(url, {
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY },
+      muteHttpExceptions: true
+    });
+    var causas = JSON.parse(r.getContentText());
+    if (!Array.isArray(causas) || causas.length === 0) {
+      sendMessage(chatId, "⚠️ No encontré causas" + (nombre ? " con '" + nombre + "'" : "") + ".\n\nUsá: `/causa holcim` o `/causa rodriguez`");
+      return;
+    }
+    var msg = "📁 *CAUSAS ACTIVAS:*\n\n";
+    causas.forEach(function(c, i) {
+      msg += (i + 1) + ". *" + (c.caratula || "Sin carátula").substring(0, 60) + "*\n";
+      if (c.numero_expediente) msg += "   📋 Expte: " + c.numero_expediente + "\n";
+      if (c.fuero_juzgado)     msg += "   🏛 " + c.fuero_juzgado + "\n";
+      if (c.estado)            msg += "   📌 " + c.estado + "\n";
+      if (c.observaciones)     msg += "   📝 " + c.observaciones.substring(0, 100) + "...\n";
+      msg += "\n";
+    });
+    sendMessage(chatId, msg);
+  } catch(e) {
+    sendMessage(chatId, "❌ Error buscando causas: " + e.message);
+  }
+}
+
+function cmdRedactar(chatId, tipo) {
+  if (!tipo) {
+    sendMessage(chatId,
+      "📝 *REDACTAR ESCRITO*\n\n" +
+      "Usá: `/redactar [tipo de escrito]`\n\n" +
+      "Ejemplos:\n" +
+      "• `/redactar intimacion despido indirecto`\n" +
+      "• `/redactar TCL registracion laboral`\n" +
+      "• `/redactar recurso apelacion`\n" +
+      "• `/redactar excepcion prescripcion`\n" +
+      "• `/redactar fracaso SECLO`\n\n" +
+      "_El bot genera un borrador con campos en [MAYÚSCULAS] para completar._"
+    );
+    return;
+  }
+
+  sendMessage(chatId, "📝 Redactando: _" + tipo + "_...\n_Puede tardar unos segundos._");
+
+  var prompt =
+    "Sos el Dr. Javier Castro, abogado laboralista argentino (CPACF T°102 F°174).\n\n" +
+    "Redactá un borrador de: *" + tipo + "*\n\n" +
+    "Aplicá la normativa laboral argentina vigente (LCT, CCCN, leyes especiales).\n" +
+    "Formato: escrito judicial argentino con encabezado, desarrollo y petitorio.\n" +
+    "Dejá en [MAYÚSCULAS ENTRE CORCHETES] los datos que el abogado debe completar.\n" +
+    "Máximo 450 palabras.";
+
+  var borrador = agenteCallClaude(prompt, 900);
+  sendMessage(chatId,
+    "📝 *BORRADOR: " + tipo.toUpperCase().substring(0, 40) + "*\n\n" +
+    borrador + "\n\n" +
+    "---\n_Completá los campos en [CORCHETES] antes de usar._"
+  );
+}
+
+function cmdLey(chatId, consulta) {
+  if (!consulta) {
+    sendMessage(chatId,
+      "📖 *CONSULTAR ARTÍCULO*\n\n" +
+      "Usá: `/ley [norma] [artículo]`\n\n" +
+      "Ejemplos:\n" +
+      "• `/ley LCT 245` — Indemnización por despido\n" +
+      "• `/ley LCT 30` — Solidaridad laboral\n" +
+      "• `/ley LCT 242` — Despido con justa causa\n" +
+      "• `/ley CCCN 772` — Deuda de valor\n" +
+      "• `/ley 27802 55` — Ley modernización art.55"
+    );
+    return;
+  }
+
+  // Abreviaturas de leyes
+  var leyes = { "LCT":"20744", "LRT":"24557", "LNE":"24013", "LCCT":"14250", "CCCN":"26994" };
+  var consultaNorm = consulta.toUpperCase();
+  Object.keys(leyes).forEach(function(k) {
+    consultaNorm = consultaNorm.replace(k, "Ley " + leyes[k]);
+  });
+
+  sendMessage(chatId, "📖 Consultando: _" + consulta + "_...");
+
+  var prompt =
+    "Sos un asistente jurídico especializado en derecho argentino.\n\n" +
+    "El abogado consulta: " + consulta + "\n\n" +
+    "Respondé con:\n" +
+    "1. TEXTO DEL ARTÍCULO (completo, transcribilo)\n" +
+    "2. ÚLTIMA MODIFICACIÓN relevante (si la hubo)\n" +
+    "3. APLICACIÓN PRÁCTICA en el fuero laboral (1-2 líneas)\n\n" +
+    "Si no conocés el artículo exacto, indicalo claramente.";
+
+  var respuesta = agenteCallClaude(prompt, 600);
+  sendMessage(chatId, "📖 *" + consulta.toUpperCase() + "*\n\n" + respuesta);
+}
+
+// ── HELPERS DEL AGENTE ──
+
+function agenteBuscarLocal(tema) {
+  var palabras = tema.toLowerCase()
+    .replace(/[.,;:()\[\]¿?¡!]/g, " ")
+    .split(/\s+/)
+    .filter(function(w) { return w.length > 4; })
+    .slice(0, 3);
+  if (!palabras.length) return [];
+  var resultados = [], vistos = {};
+  palabras.forEach(function(p) {
+    try {
+      var r = UrlFetchApp.fetch(
+        SB_URL + "/rest/v1/jurisprudencia?or=(titulo.ilike.*" + p + "*,resumen_doctrina.ilike.*" + p + "*)&select=titulo,tribunal,resumen_doctrina&limit=3",
+        { headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }, muteHttpExceptions: true }
+      );
+      JSON.parse(r.getContentText()).forEach(function(f) {
+        if (!vistos[f.titulo]) { vistos[f.titulo] = true; resultados.push(f); }
+      });
+    } catch(e) {}
+    try {
+      var r2 = UrlFetchApp.fetch(
+        SB_URL + "/rest/v1/doctrina?or=(titulo.ilike.*" + p + "*,descripcion.ilike.*" + p + "*)&select=titulo,descripcion&limit=2",
+        { headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }, muteHttpExceptions: true }
+      );
+      JSON.parse(r2.getContentText()).forEach(function(f) {
+        if (!vistos[f.titulo]) { vistos[f.titulo] = true; resultados.push(f); }
+      });
+    } catch(e) {}
+  });
+  return resultados.slice(0, 6);
+}
+
+function agenteCallClaude(prompt, maxTokens) {
+  try {
+    var r = UrlFetchApp.fetch(ANTHROPIC_API, {
+      method: "post",
+      contentType: "application/json",
+      headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+      payload: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: maxTokens || 600,
+        messages: [{ role: "user", content: prompt }]
+      }),
+      muteHttpExceptions: true
+    });
+    var data = JSON.parse(r.getContentText());
+    return (data.content || []).map(function(b) { return b.text || ""; }).join("").trim();
+  } catch(e) {
+    return "Error generando respuesta: " + e.message;
+  }
+}
+
+// ── FIN AGENTE JURÍDICO ──
