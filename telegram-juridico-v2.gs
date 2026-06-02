@@ -268,12 +268,17 @@ try {
 // ── PROCESAR TEXTO REENVIADO ──
 function procesarTexto(chatId, texto) {
   if (texto.length < 20) {
-    sendMessage(chatId, "⚠️ Texto muy corto para clasificar.");
+    sendMessage(chatId, "⚠️ Texto muy corto.\n\nSi querés describir un PDF, escribí la descripción *antes de enviarlo* (como caption del archivo), no como mensaje separado.");
+    return;
+  }
+  // Texto corto tipo título — probablemente es caption de un PDF que mandaron separado
+  if (texto.length < 150 && texto === texto.toUpperCase()) {
+    sendMessage(chatId, "ℹ️ Parece el título de un documento.\n\nPara clasificarlo correctamente, reenviá el PDF y escribí esta descripción *en el campo de texto que aparece debajo del archivo* antes de enviarlo.");
     return;
   }
   var clasificacion = clasificarTextoConClaude(texto);
   if (!clasificacion || clasificacion.tipo === "IGNORAR") {
-    sendMessage(chatId, "ℹ️ Contenido no jurídico relevante — no guardado.");
+    sendMessage(chatId, "ℹ️ No pude clasificar este texto como contenido jurídico guardable.\n\nSi es la descripción de un PDF, incluila como caption al momento de reenviar el archivo.");
     return;
   }
   var tabla = clasificacion.tipo === "JURISPRUDENCIA" ? "jurisprudencia"
