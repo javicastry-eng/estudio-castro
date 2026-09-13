@@ -216,6 +216,46 @@ function verificarPropiedades() {
 }
 
 // ============================================================
+// MONITOREO DE WEBHOOK — avisa por Telegram si Telegram reporta
+// error entregando updates (ej. el "302 Found" que ya pasó 2 veces).
+// Corre cada 30 min via trigger. Solo avisa una vez por error nuevo,
+// no reavisa en cada tick mientras persista el mismo error.
+// Setup: correr crearTriggerMonitoreoWebhook() una vez desde el editor.
+// ============================================================
+var CHAT_ID_ALERTAS = 184855747; // chat_id del dueño del bot
+
+function monitorearWebhook() {
+  try {
+    var res = UrlFetchApp.fetch(TELEGRAM_API + "/getWebhookInfo", { muteHttpExceptions: true });
+    var data = JSON.parse(res.getContentText());
+    if (!data.ok) { Logger.log("monitorearWebhook: getWebhookInfo no-ok: " + res.getContentText()); return; }
+    var info = data.result;
+    var errorActual = info.last_error_message || null;
+    var pendientes = info.pending_update_count || 0;
+    var ultimoAvisado = PROPS.getProperty("ULTIMO_ERROR_WEBHOOK_AVISADO");
+
+    if (errorActual && errorActual !== ultimoAvisado) {
+      sendMessage(CHAT_ID_ALERTAS,
+        "⚠️ <b>Alerta: webhook con error</b>\n\n" +
+        "Error: " + escaparHTML(errorActual) + "\n" +
+        "Mensajes pendientes: " + pendientes + "\n\n" +
+        "Solución: Deploy → Manage deployments → New version, y después correr nuclearReset().");
+      PROPS.setProperty("ULTIMO_ERROR_WEBHOOK_AVISADO", errorActual);
+      Logger.log("monitorearWebhook: alerta enviada — " + errorActual);
+    } else if (!errorActual && ultimoAvisado) {
+      PROPS.deleteProperty("ULTIMO_ERROR_WEBHOOK_AVISADO");
+    }
+  } catch (e) {
+    Logger.log("monitorearWebhook: excepción — " + e.message);
+  }
+}
+
+function crearTriggerMonitoreoWebhook() {
+  asegurarTriggerUnico("monitorearWebhook", { everyMinutes: 30 });
+  Logger.log("✅ Trigger de monitorearWebhook creado (cada 30 min).");
+}
+
+// ============================================================
 // ESCAPAR HTML
 // ============================================================
 function escaparHTML(texto) {
