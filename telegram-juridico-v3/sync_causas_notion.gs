@@ -161,6 +161,14 @@ function notionTextDe(prop) {
 }
 
 function crearTriggerSyncCausas() {
-  asegurarTriggerUnico("syncCausasNotionASupabase", { everyMinutes: 360 });
+  // asegurarTriggerUnico() solo acepta everyMinutes de 1/5/10/15/30 — para
+  // "cada 6 horas" hay que crear el trigger directo con .everyHours().
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === "syncCausasNotionASupabase") {
+      ScriptApp.deleteTrigger(t);
+      Logger.log("crearTriggerSyncCausas: eliminado trigger previo");
+    }
+  });
+  ScriptApp.newTrigger("syncCausasNotionASupabase").timeBased().everyHours(6).create();
   Logger.log("✅ Trigger de syncCausasNotionASupabase creado (cada 6 horas).");
 }
