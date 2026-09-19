@@ -268,7 +268,10 @@ function escaparHTML(texto) {
 }
 
 // ============================================================
-// WEBHOOK ENTRY POINT
+// WEBHOOK ENTRY POINT — YA NO ES EL CAMINO EN VIVO DESDE v3.19 (v136).
+// Ver "MODO POLLING" más abajo (pollTelegramUpdates/procesarUpdateTelegram)
+// para la causa raíz y el reemplazo. Se deja doPost intacto sin usar, por
+// si algún día se vuelve a activar el webhook a mano.
 // ============================================================
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({ status: "ok" }))
@@ -715,9 +718,96 @@ var KICK_DEBOUNCE_MS = 10 * 1000;   // no más de 1 kick cada 10s
 var MAX_TRIGGERS_DISPATCH = 6;      // tope de seguridad (límite de Apps Script: 20)
 var ASEGURAR_DEBOUNCE_MIN = 5;      // cada cuánto doPost se molesta en reparar triggers
 
+// ============================================================
+// MODO POLLING — v3.19 (v136).
+// CAUSA RAÍZ del bug "mando 2-3 documentos juntos y algunos se pierden en
+// silencio, sin ack ni error": confirmado por logs — cuando Telegram le
+// pegaba 2+ veces casi seguidas al webhook (doPost), la 2da/3ra llamada
+// nunca dejaba NINGÚN rastro en Logger (ni siquiera la línea de "entrada"
+// que es lo primero que loguea doPost) — es decir, Apps Script devolvía el
+// 302 ("Wrong response from the webhook") ANTES de que nuestro código
+// corriera una sola línea. Es un límite de la plataforma (Apps Script Web
+// Apps no soportan bien HTTP entrante concurrente), no algo arreglable
+// desde el código de doPost. Ponerle max_connections=1 a Telegram (v3.18.1)
+// ayudó pero no lo eliminó — el choque es interno de Apps Script, no de
+// cuántas conexiones abre Telegram.
+// FIX: se deja de usar webhook. El bot pasa a POLLING — cada vez que corre
+// dispatchColas (cada 1 min, mismo trigger de siempre) primero pregunta
+// "getUpdates" y procesa los mensajes nuevos uno por uno, EN SERIE, dentro
+// de esa misma ejecución. Nunca hay 2 llamadas simultáneas al Web App
+// procesando updates de Telegram, así que el 302 deja de ser posible.
+// Costo: hasta ~60s de demora para el primer ack (antes era casi
+// instantáneo) — mismo techo que ya se acepta para el resto del pipeline.
+// Setup: correr activarModoPolling() UNA vez (apaga el webhook sin tirar
+// los pendientes — quedan disponibles para el primer poll).
+// ============================================================
+var TELEGRAM_UPDATE_OFFSET_PROP = "TELEGRAM_UPDATE_OFFSET";
+
+function activarModoPolling() {
+  var del = UrlFetchApp.fetch(TELEGRAM_API + "/deleteWebhook", { muteHttpExceptions: true });
+  Logger.log("activarModoPolling: " + del.getContentText());
+}
+
+function pollTelegramUpdates() {
+  try {
+    var offset = Number(PROPS.getProperty(TELEGRAM_UPDATE_OFFSET_PROP) || 0);
+    var res = UrlFetchApp.fetch(
+      TELEGRAM_API + "/getUpdates?offset=" + (offset + 1) + "&timeout=0&limit=20",
+      { muteHttpExceptions: true }
+    );
+    var data = parseJsonSafe(res.getContentText(), null);
+    if (!data || !data.ok || !Array.isArray(data.result) || data.result.length === 0) return;
+
+    data.result.forEach(function(update) {
+      try {
+        procesarUpdateTelegram(update);
+      } catch (err) {
+        Logger.log("pollTelegramUpdates: excepción procesando update_id=" + update.update_id + " — " + err.message + " | stack: " + err.stack);
+      }
+      // Se guarda el offset SIEMPRE, haya salido bien o mal el update — así
+      // un update roto no bloquea a los siguientes para siempre (queda
+      // logueado arriba, no se pierde el rastro).
+      PROPS.setProperty(TELEGRAM_UPDATE_OFFSET_PROP, String(update.update_id));
+    });
+  } catch (err) {
+    Logger.log("pollTelegramUpdates: excepción — " + err.message + " | stack: " + err.stack);
+  }
+}
+
+function procesarUpdateTelegram(update) {
+  var tipoUpdate = update.callback_query ? "callback_query" : (update.message && update.message.document ? "documento" : (update.message ? "mensaje_texto" : "otro"));
+  var chatIdParaError = update.message ? update.message.chat.id : (update.callback_query ? update.callback_query.message.chat.id : null);
+  Logger.log("procesarUpdateTelegram: entrada tipo=" + tipoUpdate + " update_id=" + update.update_id + (chatIdParaError ? " chat_id=" + chatIdParaError : ""));
+
+  try {
+    if (update.callback_query) {
+      handleCallbackQuery(update.callback_query);
+      return;
+    }
+    if (!update.message) return;
+
+    var msgDate = update.message.date;
+    var ahora = Math.floor(Date.now() / 1000);
+    if (msgDate && (ahora - msgDate) > 300) {
+      Logger.log("procesarUpdateTelegram: DESCARTADO por antigüedad — mensaje de hace " + (ahora - msgDate) + "s (límite 300s). update_id=" + update.update_id);
+      return;
+    }
+
+    handleUpdate(update);
+    Logger.log("procesarUpdateTelegram: FIN OK, tipo=" + tipoUpdate);
+  } catch (err) {
+    Logger.log("procesarUpdateTelegram: EXCEPCIÓN — " + err.message + " | stack: " + err.stack);
+    try {
+      if (chatIdParaError) sendMessage(chatIdParaError, "⚠️ Error interno procesando tu mensaje: " + escaparHTML(err.message) + "\n\nProbá reenviarlo de nuevo.");
+    } catch (err2) { Logger.log("procesarUpdateTelegram: no se pudo avisar el error por Telegram: " + err2.message); }
+  }
+}
+
 // Punto de entrada ÚNICO de todas las colas. Lo llaman tanto el trigger
 // periódico de 1 min como los kicks .after(1s).
 function dispatchColas(e) {
+  pollTelegramUpdates();
+
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(2000)) {
     Logger.log("dispatchColas: ya hay otra corrida en curso, salteo (no se pierde nada: el periódico reintenta en ≤1 min)");
