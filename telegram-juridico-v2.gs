@@ -1,13 +1,25 @@
-const BOT_TOKEN = "8831400473:AAG-XIXVu9UWcnxRjr5rtOw3uhwuSACX0Mc";
+// SEGURIDAD (19/09/2026): este archivo es un espejo VIEJO (v2, superado
+// por telegram-juridico-v3/) que tuvo las 4 credenciales de abajo
+// HARDCODEADAS en texto plano durante meses, en un repo PÚBLICO de
+// GitHub. Se detectó un webhook desconocido (tele.goldenherd.com)
+// registrado en el bot sin que nadie de acá lo hiciera — señal de que
+// el BOT_TOKEN (y probablemente las otras 3 claves) quedaron expuestos
+// y alguien los usó. Las 4 claves fueron rotadas (BOT_TOKEN, ANTHROPIC_KEY,
+// SB_KEY, VOYAGE_KEY) y este archivo se migró al mismo esquema de v3:
+// se leen de Script Properties, nunca hardcodeadas. Si este archivo
+// nunca se usa en producción (v3 lo reemplazó hace rato), lo más seguro
+// es borrarlo directamente del repo.
+const PROPS_V2 = PropertiesService.getScriptProperties();
+const BOT_TOKEN = PROPS_V2.getProperty("BOT_TOKEN");
 const TELEGRAM_API = "https://api.telegram.org/bot" + BOT_TOKEN;
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_KEY = "sk-ant-api03-v7LI7IU6paVxRq5THG9J_WrMnTK1stjQNGOPwWb6j4h8XUM-6RhZMtsOlQmICgwRVYPJNd_GIGJJw7ulb7f5Xw-yd4EHAAA";
+const ANTHROPIC_KEY = PROPS_V2.getProperty("ANTHROPIC_KEY");
 const SB_URL = "https://nqwybjfrsnqpgdaecubg.supabase.co";
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xd3liamZyc25xcGdkYWVjdWJnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODQ2ODk5NywiZXhwIjoyMDk0MDQ0OTk3fQ.73qPxfKv29IbtG_K2hkv8HlpsERucJ1zWnkvfXx2P08";
+const SB_KEY = PROPS_V2.getProperty("SB_KEY");
 const DRIVE_ROOT = "1IfPreFIXWtSNsgpxRYjqot6KjoQQhBAJ";
 const INBOX_NAME = "INBOX-TELEGRAM";
 const CORRECT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxMH1a7KEmA0mLbfNvDT47-eeAd1rNgLFcLPMmTS9HRMi5UnF4CFrZnp8c9wqcgCEBPdA/exec";
-const VOYAGE_KEY = "pa-IrStbMvXH8UPJHLeDLjoJhMfK1pmg4lY20e6gKyFoCf";
+const VOYAGE_KEY = PROPS_V2.getProperty("VOYAGE_KEY");
 const VOYAGE_API = "https://api.voyageai.com/v1/embeddings";
 // ── POLLING — corre cada 1 minuto via trigger Time-Driven ──
 function pollUpdates() {
