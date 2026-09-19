@@ -1692,8 +1692,18 @@ function cmdSync(chatId) {
 // ============================================================
 // WEBHOOK Y MANTENIMIENTO
 // ============================================================
+// v3.19 (v136): BUG DE RAÍZ REAL — "mandar 2-3 documentos juntos y que
+// ninguno responda" con 302 persistente en getWebhookInfo (pending_update_
+// count atascado, no baja solo). CAUSA: Telegram usaba max_connections=40
+// (default) y abría VARIAS conexiones simultáneas contra el mismo exec de
+// Apps Script cuando llegaban varios updates casi juntos — Apps Script no
+// soporta bien ejecutar el mismo Web App en paralelo y devuelve 302 en vez
+// de correr doPost, así que Telegram nunca recibía el 200 y reintentaba
+// para siempre. FIX: max_connections=1 fuerza a Telegram a entregar los
+// updates DE A UNO, esperando la respuesta anterior antes de mandar el
+// siguiente. Como doPost es liviano (~1s), no se nota en latencia.
 function setWebhook() {
-  Logger.log(UrlFetchApp.fetch(TELEGRAM_API + "/setWebhook?url=" + encodeURIComponent(CORRECT_WEBHOOK_URL) + "&drop_pending_updates=true").getContentText());
+  Logger.log(UrlFetchApp.fetch(TELEGRAM_API + "/setWebhook?url=" + encodeURIComponent(CORRECT_WEBHOOK_URL) + "&drop_pending_updates=true&max_connections=1").getContentText());
 }
 function deleteWebhook() { Logger.log(UrlFetchApp.fetch(TELEGRAM_API + "/deleteWebhook?drop_pending_updates=true").getContentText()); }
 function getWebhookInfo() { Logger.log(UrlFetchApp.fetch(TELEGRAM_API + "/getWebhookInfo").getContentText()); }
@@ -1703,7 +1713,7 @@ function nuclearReset() {
   Logger.log("Delete: " + del.getContentText());
   CacheService.getScriptCache().removeAll(["lastUpdateId"]);
   Utilities.sleep(2000);
-  var set = UrlFetchApp.fetch(TELEGRAM_API + "/setWebhook?url=" + encodeURIComponent(CORRECT_WEBHOOK_URL) + "&drop_pending_updates=true");
+  var set = UrlFetchApp.fetch(TELEGRAM_API + "/setWebhook?url=" + encodeURIComponent(CORRECT_WEBHOOK_URL) + "&drop_pending_updates=true&max_connections=1");
   Logger.log("Set: " + set.getContentText());
 }
 
