@@ -214,15 +214,13 @@ function verificarPropiedades() {
     Logger.log(nombre + ": " + (PROPS.getProperty(nombre) ? "configurada" : "FALTA"));
   });
 }
-
 // ============================================================
 // MONITOREO DE WEBHOOK — avisa por Telegram si Telegram reporta
 // error entregando updates (ej. el "302 Found" que ya pasó 2 veces).
 // Corre cada 30 min via trigger. Solo avisa una vez por error nuevo,
 // no reavisa en cada tick mientras persista el mismo error.
-// Setup: correr crearTriggerMonitoreoWebhook() una vez desde el editor.
 // ============================================================
-var CHAT_ID_ALERTAS = 184855747; // chat_id del dueño del bot
+var CHAT_ID_ALERTAS = 184855747; // tu chat_id
 
 function monitorearWebhook() {
   try {
@@ -254,6 +252,8 @@ function crearTriggerMonitoreoWebhook() {
   asegurarTriggerUnico("monitorearWebhook", { everyMinutes: 30 });
   Logger.log("✅ Trigger de monitorearWebhook creado (cada 30 min).");
 }
+
+
 
 // ============================================================
 // ESCAPAR HTML
@@ -514,7 +514,7 @@ function encolarDocumento(chatId, msg) {
   var doc = msg.document;
   var fileName = doc.file_name || "documento_" + new Date().getTime();
   var payload = JSON.stringify({
-    chat_id: String(chatId) + "_" + new Date().getTime(),
+    chat_id: String(chatId) + "_" + new Date().getTime() + "_" + Math.floor(Math.random() * 1000000),
     tipo: "tarea_documento",
     payload: {
       chatId: chatId,
@@ -1067,7 +1067,7 @@ function encolarAnalisis(chatId, texto, titulo, opcion) {
     method: "post",
     headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
     payload: JSON.stringify({
-      chat_id: String(chatId) + "_" + new Date().getTime(),
+      chat_id: String(chatId) + "_" + new Date().getTime() + "_" + Math.floor(Math.random() * 1000000),
       tipo: "tarea_analisis",
       payload: { chatId: chatId, texto: texto, titulo: titulo, opcion: opcion },
       updated_at: new Date().toISOString()
@@ -1124,7 +1124,7 @@ function ejecutarAnalisisPendiente(e) {
             "Content-Type": "application/json"
           },
           payload: JSON.stringify({
-            chat_id: String(p.chatId) + "_" + new Date().getTime(),
+            chat_id: String(p.chatId) + "_" + new Date().getTime() + "_" + Math.floor(Math.random() * 1000000),
             tipo: "respuesta_pendiente",
             payload: {
               chatId: p.chatId,
