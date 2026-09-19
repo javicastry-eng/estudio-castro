@@ -494,8 +494,15 @@ function procesarDocumento(chatId, msg) {
       if (tienePartes) { clasificacion.tipo = "JURISPRUDENCIA"; if (!clasificacion.area || clasificacion.area === "GENERAL") clasificacion.area = "LABORAL"; }
     }
     var tabla = clasificacion.tipo === "JURISPRUDENCIA" ? "jurisprudencia" : clasificacion.tipo === "DOCTRINA" ? "doctrina" : "modelos";
-    var guardado = guardarEnSupabase(tabla, clasificacion, driveUrl, fileName);
     var emoji = tabla === "jurisprudencia" ? "⚖️" : tabla === "doctrina" ? "📚" : "📝";
+    var tituloParaDuplicado = clasificacion.titulo || fileName;
+    var duplicado = buscarDuplicadoEnSupabase(tabla, tituloParaDuplicado);
+    if (duplicado) {
+      var linkExistente = duplicado.DRIVE_URL || duplicado.drive_url || "";
+      sendMessage(chatId, "⚠️ <b>Ya existe un documento con este título en " + tabla + "</b> — no lo volví a guardar para no duplicar.\n\n<b>Título:</b> " + escaparHTML(tituloParaDuplicado) + (linkExistente ? "\n<b>Ya estaba cargado acá:</b> <a href=\"" + linkExistente + "\">Ver archivo</a>" : "") + "\n\nSi de verdad es un documento distinto, cambiale algo al título en el caption y reenvialo.");
+      return;
+    }
+    var guardado = guardarEnSupabase(tabla, clasificacion, driveUrl, fileName);
     if (guardado) {
       sendMessage(chatId, emoji + " <b>Guardado exitosamente</b>\n\n<b>Archivo:</b> " + escaparHTML(fileName) + "\n<b>Tabla:</b> " + tabla + "\n<b>Área:</b> " + escaparHTML(clasificacion.area) + "\n<b>Drive:</b> <a href=\"" + driveUrl + "\">Ver archivo</a>");
       var docId = generarDocId();
@@ -621,8 +628,13 @@ function procesarTexto(chatId, texto) {
     return;
   }
   var tabla = clasificacion.tipo === "JURISPRUDENCIA" ? "jurisprudencia" : clasificacion.tipo === "DOCTRINA" ? "doctrina" : "modelos";
-  var guardado = guardarEnSupabase(tabla, clasificacion, null, clasificacion.titulo);
   var emoji = tabla === "jurisprudencia" ? "⚖️" : tabla === "doctrina" ? "📚" : "📝";
+  var duplicado = buscarDuplicadoEnSupabase(tabla, clasificacion.titulo);
+  if (duplicado) {
+    sendMessage(chatId, "⚠️ <b>Ya existe un documento con este título en " + tabla + "</b> — no lo volví a guardar.\n\n<b>Título:</b> " + escaparHTML(clasificacion.titulo) + "\n\nSi de verdad es distinto, cambiale algo al título y reenvialo.");
+    return;
+  }
+  var guardado = guardarEnSupabase(tabla, clasificacion, null, clasificacion.titulo);
   if (guardado) {
     sendMessage(chatId, emoji + " <b>Guardado en " + tabla + "</b>\n\n<b>Título:</b> " + escaparHTML(clasificacion.titulo) + "\n<b>Área:</b> " + escaparHTML(clasificacion.area));
   } else {
@@ -1467,6 +1479,30 @@ function clasificarTextoConClaude(texto) {
 // ============================================================
 // SUPABASE — GUARDAR Y EMBEDDINGS
 // ============================================================
+// v3.20 (19/09/2026): chequeo de duplicados ANTES de guardar. guardarEnSupabase
+// hacía un INSERT ciego sin verificar nada — reenviar el mismo documento (a
+// propósito o por error) generaba una fila nueva cada vez, exactamente el
+// mecanismo que causó la duplicación masiva limpiada esta sesión (18.142 filas
+// en jurisprudencia con solo 138 documentos reales). Se eligió avisar y NO
+// guardar por default (en vez de pedir confirmación por botón) para no sumar
+// otro estado "pendiente" más al sistema — cuantos menos pasos intermedios,
+// menos superficie para las mismas carreras de concurrencia que costó tanto
+// resolver hoy. Si de verdad hace falta forzar un duplicado, se hace a mano
+// desde Supabase Table Editor.
+function buscarDuplicadoEnSupabase(tabla, titulo) {
+  if (!titulo) return null;
+  try {
+    var campoLink = tabla === "jurisprudencia" ? "DRIVE_URL" : "drive_url";
+    var url = SB_URL + "/rest/v1/" + tabla + "?titulo=ilike." + encodeURIComponent(titulo.trim()) + "&select=id," + campoLink + "&limit=1";
+    var res = UrlFetchApp.fetch(url, { headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }, muteHttpExceptions: true });
+    var filas = parseJsonSafe(res.getContentText(), null);
+    if (Array.isArray(filas) && filas.length > 0) return filas[0];
+  } catch (e) {
+    Logger.log("buscarDuplicadoEnSupabase: excepción — " + e.message);
+  }
+  return null;
+}
+
 function guardarEnSupabase(tabla, clasificacion, driveUrl, nombreArchivo) {
   var payload, textoEmbed;
   if (tabla === "jurisprudencia") {
