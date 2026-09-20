@@ -391,8 +391,8 @@ textarea::placeholder{color:var(--text3)}
     <div class="setup-sub">Ingresá tus credenciales para activar el sistema. Se guardan únicamente en tu navegador.</div>
     <label class="setup-label">Supabase URL</label>
     <input class="setup-input" id="cfg-url" placeholder="https://xxxx.supabase.co" />
-    <label class="setup-label">Supabase Secret Key</label>
-    <input class="setup-input" id="cfg-key" type="password" placeholder="sb_secret_..." />
+    <label class="setup-label">Supabase Publishable Key</label>
+    <input class="setup-input" id="cfg-key" type="password" placeholder="sb_publishable_..." />
     <label class="setup-label">Anthropic API Key</label>
     <input class="setup-input" id="cfg-ant" type="password" placeholder="sk-ant-..." />
     <label class="setup-label">Voyage AI API Key</label>
@@ -641,6 +641,13 @@ function resetConfig(){
 }
 
 // ── SUPABASE ──
+// 20/09/2026: SK ahora es la publishable key (sb_publishable_...), no la
+// secret. Supabase empezó a rechazar el uso de secret keys desde el
+// navegador ("Forbidden use of secret API key in browser") — la legacy
+// service_role sí lo permitía (insegura pero funcionaba). El Motor solo
+// hace lecturas, así que se agregaron políticas RLS de SELECT para el rol
+// anon en jurisprudencia/doctrina/modelos/expedientes y listo, la
+// publishable key alcanza sin bypasear RLS.
 async function sbGet(table,params){
   const H={"apikey":SK,"Authorization":"Bearer "+SK};
   const qs=Object.entries(params).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&');
