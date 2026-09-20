@@ -410,6 +410,8 @@ textarea::placeholder{color:var(--text3)}
     <input class="setup-input" id="cfg-ant" type="password" placeholder="sk-ant-..." />
     <label class="setup-label">Voyage AI API Key</label>
     <input class="setup-input" id="cfg-voy" type="password" placeholder="pa-..." />
+    <label class="setup-label">Token de guardado (opcional — para guardar escritos en Drive/Notion)</label>
+    <input class="setup-input" id="cfg-save" type="password" placeholder="el mismo valor que MOTOR_SAVE_TOKEN en Apps Script" />
     <button class="setup-btn" onclick="saveConfig()">▶ activar sistema</button>
     <div class="setup-note">Las claves se guardan solo en localStorage. Nunca salen de tu dispositivo.</div>
   </div>
@@ -497,6 +499,18 @@ textarea::placeholder{color:var(--text3)}
         <button class="btn-copy-sm" id="btn-download-prompt" onclick="descargarPromptPonencia()">descargar .txt</button>
       </div>
       <textarea class="prompt-out" id="prompt-out" rows="10" readonly onclick="this.select()"></textarea>
+    </div>
+
+    <div class="ia-wrap show" id="guardar-wrap">
+      <div class="ia-header">💾 guardar escrito final (después de trabajarlo en Claude)</div>
+      <input class="setup-input" id="guardar-titulo" style="margin-bottom:8px" placeholder="Título del escrito (para Drive/Notion)" />
+      <textarea class="prompt-out" id="guardar-contenido" rows="8" placeholder="Pegá acá el escrito final que te devolvió Claude..."></textarea>
+      <div style="display:flex;gap:16px;align-items:center;margin:10px 0;font-family:var(--mono);font-size:11px;color:var(--text2)">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="guardar-drive" checked> Drive</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="guardar-notion"> Notion</label>
+        <button class="btn-ponencia" id="btn-guardar-escrito" onclick="guardarEscritoFinal()" style="margin-left:auto;flex:none;padding:8px 16px">guardar</button>
+      </div>
+      <div id="guardar-status" style="font-family:var(--mono);font-size:11px;color:var(--text3);line-height:1.8"></div>
     </div>
   </div>
 
@@ -624,7 +638,11 @@ El revisor va a:
 
 <script>
 // ── CREDENCIALES ──
-let SB, SK, ANT_KEY, VOY_KEY;
+let SB, SK, ANT_KEY, VOY_KEY, SAVE_TOKEN;
+// Web App del bot de Telegram (telegram-juridico-v3) — la URL no es secreta
+// (es solo el endpoint), lo que la protege es el token de guardado que
+// manda cada request. Ver manejarGuardarEscrito() en Code.gs.
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLHjfsnEflasjEaqkZDWOQeA8V8IsNVU760Q8-oSu8RrLbYqI25vBMp5iZRzg7LwtktQ/exec";
 let expedientes = [], expActual = null, autoFallos = [], iaText = "", timer = null, sugTimer = null;
 
 const HOLCIM_FALLBACK = {
@@ -639,11 +657,13 @@ function saveConfig(){
   const key=document.getElementById("cfg-key").value.trim();
   const ant=document.getElementById("cfg-ant").value.trim();
   const voy=document.getElementById("cfg-voy").value.trim();
+  const save=document.getElementById("cfg-save").value.trim();
   if(!url||!key||!ant){alert("Completá al menos los tres primeros campos.");return;}
   localStorage.setItem("jhc_sb_url",url);
   localStorage.setItem("jhc_sb_key",key);
   localStorage.setItem("jhc_ant_key",ant);
   if(voy)localStorage.setItem("jhc_voy_key",voy);
+  if(save)localStorage.setItem("jhc_save_token",save);
   loadApp();
 }
 function loadApp(){
@@ -651,6 +671,7 @@ function loadApp(){
   SK=localStorage.getItem("jhc_sb_key");
   ANT_KEY=localStorage.getItem("jhc_ant_key");
   VOY_KEY=localStorage.getItem("jhc_voy_key")||"";
+  SAVE_TOKEN=localStorage.getItem("jhc_save_token")||"";
   if(!SB||!SK||!ANT_KEY){
     document.getElementById("setup-screen").style.display="flex";
     document.getElementById("app").className="app";return;
@@ -661,7 +682,7 @@ function loadApp(){
 }
 function resetConfig(){
   if(!confirm("¿Cambiar credenciales?"))return;
-  ["jhc_sb_url","jhc_sb_key","jhc_ant_key","jhc_voy_key"].forEach(k=>localStorage.removeItem(k));
+  ["jhc_sb_url","jhc_sb_key","jhc_ant_key","jhc_voy_key","jhc_save_token"].forEach(k=>localStorage.removeItem(k));
   location.reload();
 }
 
@@ -1244,6 +1265,7 @@ Redactá el escrito de ponencia completo, con estructura formal (encabezado, hec
 
   document.getElementById("prompt-out").value=prompt;
   document.getElementById("prompt-wrap").className="ia-wrap show";
+  document.getElementById("guardar-titulo").value=(ctx.caratula||"Escrito de ponencia")+" — "+new Date().toLocaleDateString("es-AR");
   document.getElementById("prompt-out").scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 
@@ -1266,6 +1288,54 @@ function descargarPromptPonencia(){
   a.href=url;a.download=nombre+".txt";
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ── GUARDAR ESCRITO FINAL EN DRIVE/NOTION ──
+// 20/09/2026: el Motor no puede escribir directo a Drive/Notion desde el
+// navegador (necesitaría OAuth propio) — en cambio le pide al Web App del
+// bot de Telegram (que ya tiene esos accesos) que lo guarde. Ver
+// manejarGuardarEscrito() en Code.gs. Se manda con Content-Type text/plain
+// a propósito: evita el preflight CORS que Apps Script no responde.
+async function guardarEscritoFinal(){
+  const contenido=document.getElementById("guardar-contenido").value.trim();
+  const statusEl=document.getElementById("guardar-status");
+  if(!contenido){statusEl.textContent="// pegá primero el escrito.";return;}
+  if(!SAVE_TOKEN){statusEl.textContent="// falta el token de guardado — cargalo en ⚙ config.";return;}
+  const usarDrive=document.getElementById("guardar-drive").checked;
+  const usarNotion=document.getElementById("guardar-notion").checked;
+  if(!usarDrive&&!usarNotion){statusEl.textContent="// elegí al menos un destino.";return;}
+  const destino=usarDrive&&usarNotion?"ambos":(usarNotion?"notion":"drive");
+  const ctx=expActual||{};
+  const titulo=document.getElementById("guardar-titulo").value.trim()||(ctx.caratula||"Escrito")+" — "+new Date().toLocaleDateString("es-AR");
+
+  const btn=document.getElementById("btn-guardar-escrito");
+  btn.disabled=true;btn.textContent="guardando...";
+  statusEl.textContent="// guardando...";
+
+  try{
+    const res=await fetch(APPS_SCRIPT_URL,{
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({
+        action:"guardar_escrito",token:SAVE_TOKEN,titulo,contenido,destino,
+        causa:{link_drive_carpeta:ctx.link_drive_carpeta||"",link_notion_pagina:ctx.link_notion_pagina||""}
+      })
+    });
+    const d=await res.json();
+    if(!d.ok){
+      statusEl.textContent="// error: "+(d.error||"desconocido");
+    }else{
+      let lineas=[];
+      if(d.drive_url)lineas.push(`✓ Drive: <a href="${d.drive_url}" target="_blank" style="color:var(--green)">${d.drive_url}</a>`);
+      if(d.drive_error)lineas.push(`✗ Drive: ${d.drive_error}`);
+      if(d.notion_url)lineas.push(`✓ Notion: <a href="${d.notion_url}" target="_blank" style="color:var(--green)">${d.notion_url}</a>`);
+      if(d.notion_error)lineas.push(`✗ Notion: ${d.notion_error}`);
+      statusEl.innerHTML=lineas.join("<br>")||"// listo.";
+    }
+  }catch(e){
+    statusEl.textContent="// error de red: "+e.message;
+  }
+  btn.disabled=false;btn.textContent="guardar";
 }
 
 // ── PRÓXIMO ARGUMENTO ──
