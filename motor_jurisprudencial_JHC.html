@@ -419,6 +419,8 @@ textarea::placeholder{color:var(--text3)}
 </div>
 
 <div class="causa-bar">
+  <span class="cb-label">Rama</span>
+  <select class="cb-sel" id="rama-sel" onchange="onRamaChange()"></select>
   <span class="cb-label">Causa</span>
   <select class="cb-sel" id="exp-sel" onchange="loadExp()">
     <option value="">— cargando expedientes —</option>
@@ -506,7 +508,7 @@ textarea::placeholder{color:var(--text3)}
       <div id="res-m"></div>
     </div>
     <div id="pan-w" style="display:none">
-      <div class="empty" id="status-w">// usá "buscar web" para consultar CSJN, CNAT, Infojus y ElDial...</div>
+      <div class="empty" id="status-w">// usá "buscar web" para consultar la jurisprudencia de la rama seleccionada...</div>
       <div id="res-w"></div>
     </div>
 
@@ -609,6 +611,50 @@ const HOLCIM_FALLBACK = {
   codemandados:"Holcim Argentina SA · Supply of Works SRL · Grupo Tossa SRL · C. Ramírez · V. Ramírez · R. Gianastacio · N. Grandinetti"
 };
 
+// ── RAMAS DEL DERECHO ──
+// Cada rama define la persona/experticia con la que Claude responde, los
+// tribunales/fuentes a priorizar en las búsquedas web, y la normativa clave.
+// El valor de cada clave coincide con el campo AREA/area que ya completa
+// automáticamente el bot de Telegram al clasificar documentos en Supabase.
+const RAMAS = {
+  TODAS:{label:"Todas / multirrama",persona:"Sos el Dr. Javier Castro, abogado argentino (CPACF T°102 F°174), con práctica multidisciplinaria en las distintas ramas del derecho. Analizá el caso identificando primero la rama o ramas del derecho involucradas y aplicá la normativa y jurisprudencia específica de cada una.",tribunales:"CSJN, Cámaras Nacionales y Federales según la materia, Infojus, ElDial, SAIJ",norma:""},
+  LABORAL:{label:"Laboral",persona:"Sos el Dr. Javier Castro, abogado laboralista argentino (CPACF T°102 F°174), experto en CNAT.",tribunales:"CNAT, CSJN, Infojus, ElDial",norma:"LCT, LNE"},
+  CIVIL:{label:"Civil",persona:"Sos el Dr. Javier Castro, abogado civilista argentino (CPACF T°102 F°174), experto en derecho civil y de daños.",tribunales:"CNCiv, Cámaras Civiles y Comerciales Federales, CSJN, Infojus, ElDial",norma:"Código Civil y Comercial de la Nación (CCyC)"},
+  COMERCIAL:{label:"Comercial / Societario",persona:"Sos el Dr. Javier Castro, abogado especializado en derecho comercial y societario argentino (CPACF T°102 F°174), experto en CNCom.",tribunales:"CNCom, IGJ, CSJN, Infojus, ElDial",norma:"Ley General de Sociedades 19.550, CCyC"},
+  PENAL:{label:"Penal",persona:"Sos el Dr. Javier Castro, abogado penalista argentino (CPACF T°102 F°174), experto en fuero penal nacional y federal.",tribunales:"Cámara Federal de Casación Penal, CNCP, CSJN, Infojus, ElDial",norma:"Código Penal, CPPN"},
+  FAMILIA:{label:"Familia",persona:"Sos el Dr. Javier Castro, abogado especializado en derecho de familia argentino (CPACF T°102 F°174).",tribunales:"Cámaras de Familia, CSJN, Infojus, ElDial",norma:"CCyC (Libro Segundo)"},
+  SUCESIONES:{label:"Sucesiones",persona:"Sos el Dr. Javier Castro, abogado especializado en sucesiones argentino (CPACF T°102 F°174).",tribunales:"CNCiv, CSJN, Infojus, ElDial",norma:"CCyC (Libro Quinto)"},
+  ADMINISTRATIVO:{label:"Administrativo",persona:"Sos el Dr. Javier Castro, abogado especializado en derecho administrativo argentino (CPACF T°102 F°174).",tribunales:"Cámara Contencioso Administrativo Federal, CSJN, Infojus, ElDial",norma:"Ley Nacional de Procedimientos Administrativos 19.549"},
+  CONSUMIDOR:{label:"Consumidor",persona:"Sos el Dr. Javier Castro, abogado especializado en derecho del consumidor argentino (CPACF T°102 F°174).",tribunales:"Juzgados Civil y Comercial Federal, CNCom, CSJN, Infojus, ElDial",norma:"Ley de Defensa del Consumidor 24.240, CCyC"},
+  GENERAL:{label:"General",persona:"Sos el Dr. Javier Castro, abogado argentino (CPACF T°102 F°174).",tribunales:"CSJN, Infojus, ElDial, SAIJ",norma:""}
+};
+function getRama(){return RAMAS[localStorage.getItem("jhc_rama")||"LABORAL"]||RAMAS.TODAS;}
+function ramaKey(){return localStorage.getItem("jhc_rama")||"LABORAL";}
+function matchesArea(f,key){
+  if(key==="TODAS")return true;
+  const a=(f.AREA||f.area||"").toString().trim().toUpperCase();
+  if(!a)return true; // registros sin AREA cargada: no los descartamos
+  return a===key;
+}
+function filtrarPorRama(results){
+  const key=ramaKey();
+  if(key==="TODAS")return results;
+  const filtrados=results.filter(f=>matchesArea(f,key));
+  // si el filtro deja todo vacío (AREA mal cargada o inexistente), mostramos sin filtrar
+  return filtrados.length?filtrados:results;
+}
+function onRamaChange(){
+  localStorage.setItem("jhc_rama",document.getElementById("rama-sel").value);
+  const r=getRama();
+  const stW=document.getElementById("status-w"),stA=document.getElementById("status-a");
+  if(stW&&!stW.querySelector(".loading-dots"))stW.innerHTML=`// usá "buscar web" para consultar ${r.tribunales}...`;
+}
+function initRamaSelector(){
+  const sel=document.getElementById("rama-sel");
+  sel.innerHTML=Object.entries(RAMAS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join("");
+  sel.value=ramaKey();
+}
+
 function saveConfig(){
   const url=document.getElementById("cfg-url").value.trim();
   const key=document.getElementById("cfg-key").value.trim();
@@ -681,6 +727,7 @@ function getCaratula(e){
 
 // ── INIT ──
 async function init(){
+  initRamaSelector();
   try{
     const exps=await sbGet("expedientes",{select:"*",limit:50});
     expedientes=exps;
@@ -792,6 +839,7 @@ async function autoSearch(txt){
     }
   }
 
+  results=filtrarPorRama(results);
   autoFallos=results;
   setPbar(0);
   document.getElementById("n-auto").textContent=results.length;
@@ -823,8 +871,8 @@ async function autoWebSearch(txt){
       body:JSON.stringify({
         model:"claude-haiku-4-5",max_tokens:800,
         tools:[{type:"web_search_20250305",name:"web_search"}],
-        messages:[{role:"user",content:`Buscá jurisprudencia argentina laboral sobre: "${temasBusqueda}"
-Buscá en CNAT, CSJN, Infojus, ElDial. Solo fallos relevantes.
+        messages:[{role:"user",content:`Buscá jurisprudencia argentina de ${getRama().label.toLowerCase()} sobre: "${temasBusqueda}"
+Buscá en ${getRama().tribunales}. Solo fallos relevantes.
 Devolvé JSON sin texto extra:
 {"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis en 1-2 oraciones","url":"url"}]}`}]
       })
@@ -876,7 +924,7 @@ async function generarSugerencia(txt,fallos){
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
         model:"claude-haiku-4-5",max_tokens:180,
-        messages:[{role:"user",content:`Sos asistente jurídico laboral argentino.
+        messages:[{role:"user",content:`Sos asistente jurídico argentino, especializado en ${getRama().label.toLowerCase()}.
 Argumento en redacción: "${txt.substring(0,400)}"
 Fallos disponibles: ${refStr}
 Causa: ${ctx.caratula||""}
@@ -934,6 +982,7 @@ async function doManual(){
     }catch(e){document.getElementById("status-m").textContent="// error: "+e.message;}
   }
 
+  results=filtrarPorRama(results);
   setPbar(0);
 
   if(results.length>0){
@@ -952,8 +1001,8 @@ async function doManual(){
         body:JSON.stringify({
           model:"claude-haiku-4-5",max_tokens:1000,
           tools:[{type:"web_search_20250305",name:"web_search"}],
-          messages:[{role:"user",content:`Buscá jurisprudencia argentina sobre: "${q}"
-Buscá en CNAT, CSJN, Infojus, ElDial, Poder Judicial.
+          messages:[{role:"user",content:`Buscá jurisprudencia argentina de ${getRama().label.toLowerCase()} sobre: "${q}"
+Buscá en ${getRama().tribunales}, Poder Judicial.
 Devolvé JSON sin texto extra:
 {"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis en 1-2 oraciones","url":"url"}]}`}]
         })
@@ -990,7 +1039,7 @@ async function doWebSearch(){
   const q=document.getElementById("manual-q").value.trim();
   if(!q){alert("Escribí un término en la barra de búsqueda primero.");return;}
   switchTab("w");
-  document.getElementById("status-w").innerHTML='<span class="loading-dots">// buscando en CSJN, CNAT, Infojus, ElDial</span>';
+  document.getElementById("status-w").innerHTML=`<span class="loading-dots">// buscando en ${getRama().tribunales}</span>`;
   document.getElementById("res-w").innerHTML="";
   document.getElementById("n-web").textContent="0";
   document.getElementById("btn-web-search").disabled=true;
@@ -1003,8 +1052,8 @@ async function doWebSearch(){
       body:JSON.stringify({
         model:"claude-sonnet-4-20250514",max_tokens:1500,
         tools:[{type:"web_search_20250305",name:"web_search"}],
-        messages:[{role:"user",content:`Busca jurisprudencia argentina sobre: "${q}"
-Buscá específicamente en CSJN, CNAT, Cámara Nacional del Trabajo, Infojus, ElDial y Poder Judicial Argentina.
+        messages:[{role:"user",content:`Busca jurisprudencia argentina de ${getRama().label.toLowerCase()} sobre: "${q}"
+Buscá específicamente en ${getRama().tribunales} y Poder Judicial Argentina.
 Devolvé exactamente en este formato JSON (sin texto extra, sin markdown):
 {"resultados":[{"titulo":"nombre del fallo","tribunal":"tribunal","holding":"síntesis doctrinaria en 1-2 oraciones","url":"url si disponible","relevancia":"alta|media"}]}`}]
       })
@@ -1117,9 +1166,10 @@ function buildRefStr(fallos){
 }
 
 function buildPromptIA(txt,ctx,refStr,conWeb){
+  const r=getRama();
   const webInstr=conWeb?`
-Usá la herramienta web_search para buscar jurisprudencia reciente de CNAT, CSJN e Infojus que complemente el argumento. Buscá específicamente sobre los temas del argumento y la causa.`:"";
-  return `Sos el Dr. Javier Castro, abogado laboralista argentino (CPACF T°102 F°174), experto en CNAT.${webInstr}
+Usá la herramienta web_search para buscar jurisprudencia reciente de ${r.tribunales} que complemente el argumento. Buscá específicamente sobre los temas del argumento y la causa.`:"";
+  return `${r.persona}${webInstr}${r.norma?"\nNormativa de referencia de esta rama: "+r.norma+".":""}
 
 CAUSA: ${ctx.caratula||""}
 ${ctx.expte?"EXPEDIENTE: "+ctx.expte:""}
@@ -1263,6 +1313,7 @@ async function doRevisor(conWeb) {
     fallosLocales = rr.slice(0, 8);
   }
 
+  fallosLocales = filtrarPorRama(fallosLocales);
   setPbar(60);
 
   // 2. Buscar en web si se pidió
@@ -1295,7 +1346,8 @@ async function doRevisor(conWeb) {
 
   // 4. Llamar a Claude para el análisis completo
   try {
-    const prompt = `Sos el Dr. Javier Castro, abogado laboralista argentino (CPACF T°102 F°174), experto en CNAT.
+    const rRev=getRama();
+    const prompt = `${rRev.persona}
 ${ctx.caratula ? "CAUSA: " + ctx.caratula : ""}
 ${ctx.estrategia ? "ESTRATEGIA: " + ctx.estrategia : ""}
 
@@ -1437,7 +1489,7 @@ async function buscarWebParaRevisor(texto) {
       body: JSON.stringify({
         model:"claude-haiku-4-5", max_tokens:800,
         tools:[{type:"web_search_20250305",name:"web_search"}],
-        messages:[{role:"user",content:`Buscá jurisprudencia argentina sobre: "${temas}"\nBuscá en CNAT, CSJN, Infojus, ElDial.\nDevolvé JSON:\n{"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis","url":"url"}]}`}]
+        messages:[{role:"user",content:`Buscá jurisprudencia argentina de ${getRama().label.toLowerCase()} sobre: "${temas}"\nBuscá en ${getRama().tribunales}.\nDevolvé JSON:\n{"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis","url":"url"}]}`}]
       })
     });
     const data = await res.json();
