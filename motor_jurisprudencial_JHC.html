@@ -663,12 +663,16 @@ async function sbRpc(fn,body){
 }
 
 // ── VOYAGE EMBEDDINGS ──
+// 20/09/2026: era "voyage-3-lite", pero las columnas embedding de Supabase
+// son vector(1024) (generadas por el bot con voyage-4-lite) — el mismatch
+// de dimensión hacía que match_jurisprudencia/doctrina/modelos devolvieran
+// 400 Bad Request. Tiene que ser el mismo modelo que usa el bot siempre.
 async function getEmbeddingVoyage(text){
   if(!VOY_KEY) return null;
   const r=await fetch("https://api.voyageai.com/v1/embeddings",{
     method:"POST",
     headers:{"Content-Type":"application/json","Authorization":"Bearer "+VOY_KEY},
-    body:JSON.stringify({model:"voyage-3-lite",input:[text.substring(0,2000)],input_type:"query"})
+    body:JSON.stringify({model:"voyage-4-lite",input:[text.substring(0,2000)],input_type:"query"})
   });
   if(!r.ok) return null;
   const d=await r.json();
@@ -828,7 +832,7 @@ async function autoWebSearch(txt){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-haiku-4-5",max_tokens:800,
+        model:"claude-haiku-4-5-20251001",max_tokens:800,
         tools:[{type:"web_search_20250305",name:"web_search"}],
         messages:[{role:"user",content:`Buscá jurisprudencia argentina laboral sobre: "${temasBusqueda}"
 Buscá en CNAT, CSJN, Infojus, ElDial. Solo fallos relevantes.
@@ -882,7 +886,7 @@ async function generarSugerencia(txt,fallos){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-haiku-4-5",max_tokens:180,
+        model:"claude-haiku-4-5-20251001",max_tokens:180,
         messages:[{role:"user",content:`Sos asistente jurídico laboral argentino.
 Argumento en redacción: "${txt.substring(0,400)}"
 Fallos disponibles: ${refStr}
@@ -957,7 +961,7 @@ async function doManual(){
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
         body:JSON.stringify({
-          model:"claude-haiku-4-5",max_tokens:1000,
+          model:"claude-haiku-4-5-20251001",max_tokens:1000,
           tools:[{type:"web_search_20250305",name:"web_search"}],
           messages:[{role:"user",content:`Buscá jurisprudencia argentina sobre: "${q}"
 Buscá en CNAT, CSJN, Infojus, ElDial, Poder Judicial.
@@ -1008,7 +1012,7 @@ async function doWebSearch(){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1500,
+        model:"claude-sonnet-5",max_tokens:1500,
         tools:[{type:"web_search_20250305",name:"web_search"}],
         messages:[{role:"user",content:`Busca jurisprudencia argentina sobre: "${q}"
 Buscá específicamente en CSJN, CNAT, Cámara Nacional del Trabajo, Infojus, ElDial y Poder Judicial Argentina.
@@ -1067,7 +1071,7 @@ async function doIA(){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1200,
+        model:"claude-sonnet-5",max_tokens:1200,
         messages:[{role:"user",content:buildPromptIA(txt,ctx,refStr,false)}]
       })
     });
@@ -1098,7 +1102,7 @@ async function doIAconWeb(){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1500,
+        model:"claude-sonnet-5",max_tokens:1500,
         tools:[{type:"web_search_20250305",name:"web_search"}],
         messages:[{role:"user",content:buildPromptIA(txt,ctx,refStr,true)}]
       })
@@ -1154,7 +1158,7 @@ async function generarProximo(txt,iaResult,fallos){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-haiku-4-5",max_tokens:120,
+        model:"claude-haiku-4-5-20251001",max_tokens:120,
         messages:[{role:"user",content:`Causa: ${ctx.caratula||""}
 Argumento redactado: "${txt.substring(0,300)}"
 Fallos disponibles: ${fallos.slice(0,3).map(f=>f.titulo).join(", ")||"ninguno"}
@@ -1328,7 +1332,7 @@ Analizá el texto como si fueras un revisor externo del escrito. Respondé EXACT
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-      body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:2000, messages:[{role:"user",content:prompt}]})
+      body: JSON.stringify({model:"claude-sonnet-5", max_tokens:2000, messages:[{role:"user",content:prompt}]})
     });
     const data = await res.json();
     const txt = (data.content||[]).map(b=>b.text||"").join("");
@@ -1442,7 +1446,7 @@ async function buscarWebParaRevisor(texto) {
       method: "POST",
       headers: {"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body: JSON.stringify({
-        model:"claude-haiku-4-5", max_tokens:800,
+        model:"claude-haiku-4-5-20251001", max_tokens:800,
         tools:[{type:"web_search_20250305",name:"web_search"}],
         messages:[{role:"user",content:`Buscá jurisprudencia argentina sobre: "${temas}"\nBuscá en CNAT, CSJN, Infojus, ElDial.\nDevolvé JSON:\n{"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis","url":"url"}]}`}]
       })

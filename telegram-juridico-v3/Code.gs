@@ -760,11 +760,19 @@ function activarModoPolling() {
   Logger.log("activarModoPolling: " + del.getContentText());
 }
 
+// v3.19.1 (20/09/2026): BUG DE RAÍZ — Telegram recuerda el "allowed_updates"
+// del último setWebhook que se haya hecho (el del atacante incluido) y lo
+// sigue aplicando incluso en modo polling. El suyo excluía "callback_query"
+// — por eso los documentos se guardaban bien (son "message") pero tocar
+// los botones del menú (1-5) no hacía nada, nunca llegaban al polling.
+// Fix: pasar allowed_updates explícito en cada getUpdates, para no
+// depender de configuraciones viejas de webhooks anteriores.
 function pollTelegramUpdates() {
   try {
     var offset = Number(PROPS.getProperty(TELEGRAM_UPDATE_OFFSET_PROP) || 0);
+    var allowedUpdates = encodeURIComponent(JSON.stringify(["message", "callback_query"]));
     var res = UrlFetchApp.fetch(
-      TELEGRAM_API + "/getUpdates?offset=" + (offset + 1) + "&timeout=0&limit=20",
+      TELEGRAM_API + "/getUpdates?offset=" + (offset + 1) + "&timeout=0&limit=20&allowed_updates=" + allowedUpdates,
       { muteHttpExceptions: true }
     );
     var data = parseJsonSafe(res.getContentText(), null);
