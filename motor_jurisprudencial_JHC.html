@@ -674,7 +674,10 @@ async function getEmbeddingVoyage(text){
     headers:{"Content-Type":"application/json","Authorization":"Bearer "+VOY_KEY},
     body:JSON.stringify({model:"voyage-4-lite",input:[text.substring(0,2000)],input_type:"query"})
   });
-  if(!r.ok) return null;
+  if(!r.ok){
+    console.error("Voyage embeddings error:",r.status,await r.text());
+    return null;
+  }
   const d=await r.json();
   return d.data?.[0]?.embedding||null;
 }
@@ -774,9 +777,9 @@ async function autoSearch(txt){
       if(emb){
         usandoVoyage=true;
         const [rJ,rD,rM]=await Promise.all([
-          sbRpc("match_jurisprudencia",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:6}).catch(()=>[]),
-          sbRpc("match_doctrina",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:3}).catch(()=>[]),
-          sbRpc("match_modelos",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:2}).catch(()=>[])
+          sbRpc("match_jurisprudencia",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:6}).catch(e=>{console.error("match_jurisprudencia error:",e);return [];}),
+          sbRpc("match_doctrina",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:3}).catch(e=>{console.error("match_doctrina error:",e);return [];}),
+          sbRpc("match_modelos",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:2}).catch(e=>{console.error("match_modelos error:",e);return [];})
         ]);
         // Solo incluir resultados sobre el umbral
         results=[
@@ -921,9 +924,9 @@ async function doManual(){
       const emb=await getEmbeddingVoyage(q);
       if(emb){
         const[rJ,rD,rM]=await Promise.all([
-          sbRpc("match_jurisprudencia",{query_embedding:emb,match_threshold:0.25,match_count:8}).catch(()=>[]),
-          sbRpc("match_doctrina",{query_embedding:emb,match_threshold:0.25,match_count:4}).catch(()=>[]),
-          sbRpc("match_modelos",{query_embedding:emb,match_threshold:0.25,match_count:3}).catch(()=>[])
+          sbRpc("match_jurisprudencia",{query_embedding:emb,match_threshold:0.25,match_count:8}).catch(e=>{console.error("match_jurisprudencia error:",e);return [];}),
+          sbRpc("match_doctrina",{query_embedding:emb,match_threshold:0.25,match_count:4}).catch(e=>{console.error("match_doctrina error:",e);return [];}),
+          sbRpc("match_modelos",{query_embedding:emb,match_threshold:0.25,match_count:3}).catch(e=>{console.error("match_modelos error:",e);return [];})
         ]);
         results=[
           ...rJ.map(f=>({...f,_tipo:"juris",_sim:f.similarity})),
@@ -1076,9 +1079,14 @@ async function doIA(){
       })
     });
     const d=await res.json();
-    iaText=(d.content||[]).map(b=>b.text||"").join("");
-    out.textContent=iaText||"Sin respuesta.";
-    generarProximo(txt,iaText,autoFallos);
+    if(!res.ok||d.error){
+      console.error("Anthropic API error:",res.status,d);
+      out.textContent="Error IA ("+res.status+"): "+(d.error?.message||JSON.stringify(d));
+    }else{
+      iaText=(d.content||[]).map(b=>b.text||"").join("");
+      out.textContent=iaText||"Sin respuesta.";
+      generarProximo(txt,iaText,autoFallos);
+    }
   }catch(e){out.textContent="Error IA: "+e.message;}
 
   btn.disabled=false;btn.textContent="◈ mejorar con IA";
@@ -1108,9 +1116,14 @@ async function doIAconWeb(){
       })
     });
     const d=await res.json();
-    iaText=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text||"").join("");
-    out.textContent=iaText||"Sin respuesta.";
-    generarProximo(txt,iaText,autoFallos);
+    if(!res.ok||d.error){
+      console.error("Anthropic API error:",res.status,d);
+      out.textContent="Error IA ("+res.status+"): "+(d.error?.message||JSON.stringify(d));
+    }else{
+      iaText=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text||"").join("");
+      out.textContent=iaText||"Sin respuesta.";
+      generarProximo(txt,iaText,autoFallos);
+    }
   }catch(e){out.textContent="Error IA: "+e.message;}
 
   btn.disabled=false;btn.textContent="🌐 + web";
@@ -1251,9 +1264,9 @@ async function doRevisor(conWeb) {
       const emb = await getEmbeddingVoyage(texto.substring(0, 1500));
       if (emb) {
         const [rJ, rD, rM] = await Promise.all([
-          sbRpc("match_jurisprudencia", {query_embedding: emb, match_threshold: 0.35, match_count: 6}).catch(() => []),
-          sbRpc("match_doctrina", {query_embedding: emb, match_threshold: 0.35, match_count: 3}).catch(() => []),
-          sbRpc("match_modelos", {query_embedding: emb, match_threshold: 0.35, match_count: 3}).catch(() => [])
+          sbRpc("match_jurisprudencia", {query_embedding: emb, match_threshold: 0.35, match_count: 6}).catch(e => {console.error("match_jurisprudencia error:",e); return [];}),
+          sbRpc("match_doctrina", {query_embedding: emb, match_threshold: 0.35, match_count: 3}).catch(e => {console.error("match_doctrina error:",e); return [];}),
+          sbRpc("match_modelos", {query_embedding: emb, match_threshold: 0.35, match_count: 3}).catch(e => {console.error("match_modelos error:",e); return [];})
         ]);
         fallosLocales = [
           ...rJ.map(f => ({...f, _tipo:"juris", _sim:f.similarity})),
