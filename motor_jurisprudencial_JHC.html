@@ -217,6 +217,19 @@ textarea::placeholder{color:var(--text3)}
 }
 .btn-web-arg:hover{background:var(--blue);color:#fff}
 .btn-web-arg:disabled{opacity:.3;cursor:not-allowed}
+.btn-ponencia{
+  padding:10px 14px;background:var(--purple-dim);border:1px solid var(--purple);
+  color:var(--purple);font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;border-radius:2px;cursor:pointer;transition:all .2s;
+}
+.btn-ponencia:hover{background:var(--purple);color:#fff}
+.btn-ponencia:disabled{opacity:.3;cursor:not-allowed}
+.prompt-out{
+  background:var(--bg2);border:1px solid var(--border2);border-left:2px solid var(--purple);
+  border-radius:0 2px 2px 0;padding:14px 16px;font-size:12px;line-height:1.7;
+  color:var(--text2);white-space:pre-wrap;max-height:320px;overflow-y:auto;
+  font-family:var(--mono);width:100%;resize:vertical;box-sizing:border-box;
+}
 
 /* ── IA OUTPUT ── */
 .ia-wrap{display:none;flex-shrink:0}
@@ -465,6 +478,9 @@ textarea::placeholder{color:var(--text3)}
       <button class="btn-ia" id="btn-ia" onclick="doIA()" disabled>◈ mejorar con IA</button>
       <button class="btn-web-arg" id="btn-web-arg" onclick="doIAconWeb()" disabled title="Mejorar argumento buscando jurisprudencia online">🌐 + web</button>
     </div>
+    <div class="btn-row">
+      <button class="btn-ponencia" id="btn-prompt-ponencia" onclick="generarPromptPonencia()" disabled title="Arma un prompt con la causa, tu argumento y las citas encontradas, listo para pegar en Claude">📋 generar prompt ponencia</button>
+    </div>
 
     <div class="ia-wrap" id="ia-wrap">
       <div class="ia-header">
@@ -472,6 +488,15 @@ textarea::placeholder{color:var(--text3)}
         <button class="btn-copy-sm" onclick="copyIA()">copiar</button>
       </div>
       <div class="ia-box" id="ia-out"></div>
+    </div>
+
+    <div class="ia-wrap" id="prompt-wrap">
+      <div class="ia-header">
+        prompt para escrito de ponencia — pegalo en Claude
+        <button class="btn-copy-sm" id="btn-copy-prompt" onclick="copyPromptPonencia()">copiar</button>
+        <button class="btn-copy-sm" id="btn-download-prompt" onclick="descargarPromptPonencia()">descargar .txt</button>
+      </div>
+      <textarea class="prompt-out" id="prompt-out" rows="10" readonly onclick="this.select()"></textarea>
     </div>
   </div>
 
@@ -1165,6 +1190,84 @@ TAREA:
 2. VERSIÓN MEJORADA: reescribí en estilo escrito judicial argentino, listo para insertar en un escrito. Incorporá citas de jurisprudencia con tribunal. Usá lenguaje técnico preciso. Si buscaste en web, incorporá los fallos más relevantes encontrados.`;
 }
 
+// ── PROMPT PARA ESCRITO DE PONENCIA (uso manual en Claude.ai) ──
+// 20/09/2026: a diferencia de doIA/doIAconWeb (pensados para mejorar un
+// argumento puntual, con max_tokens chico), esto arma un prompt largo con
+// TODA la base de referencias encontrada en SEMÁNTICAS, para pegar directo
+// en una conversación de Claude.ai y pedir un escrito de ponencia completo
+// (sin el límite de tokens de la llamada directa a la API desde acá).
+function buildRefStrCompleto(fallos){
+  const j=fallos.filter(f=>f._tipo==="juris");
+  const d=fallos.filter(f=>f._tipo==="doctrina");
+  const m=fallos.filter(f=>f._tipo==="modelo");
+  let s="";
+  if(j.length){s+="JURISPRUDENCIA:\n"+j.map(f=>{
+    const sim=f._sim?` [similitud ${Math.round(f._sim*100)}%]`:"";
+    const url=f.drive_url||f.DRIVE_URL||"";
+    return `- ${f.titulo} (${f.tribunal||""})${sim}\n  ${(f.resumen_doctrina||"").substring(0,500)}${url?"\n  Fuente: "+url:""}`;
+  }).join("\n\n");}
+  if(d.length){s+="\n\nDOCTRINA Y NORMATIVA:\n"+d.map(f=>{
+    const sim=f._sim?` [similitud ${Math.round(f._sim*100)}%]`:"";
+    const url=f.drive_url||f.DRIVE_URL||"";
+    return `- ${f.titulo} (${f.tipo||"Doctrina"})${sim}\n  ${(f.descripcion||f.contenido||"").substring(0,500)}${url?"\n  Fuente: "+url:""}`;
+  }).join("\n\n");}
+  if(m.length){s+="\n\nMODELOS DEL ESTUDIO:\n"+m.map(f=>{
+    const sim=f._sim?` [similitud ${Math.round(f._sim*100)}%]`:"";
+    const url=f.drive_url||f.DRIVE_URL||"";
+    return `- ${f.titulo} (${f.tipo_escrito||"Modelo"})${sim}\n  ${(f.descripcion||"").substring(0,500)}${url?"\n  Fuente: "+url:""}`;
+  }).join("\n\n");}
+  return s||"Sin referencias en la base de conocimiento.";
+}
+
+function generarPromptPonencia(){
+  const txt=document.getElementById("editor").value.trim();
+  if(!txt){alert("Escribí primero el argumento o los puntos que querés desarrollar.");return;}
+  const ctx=expActual||{caratula:"Causa no seleccionada",estrategia:"",codemandados:""};
+  const refStr=buildRefStrCompleto(autoFallos);
+
+  const prompt=`Sos el Dr. Javier Castro, abogado laboralista argentino (CPACF T°102 F°174), experto en CNAT. Necesito que redactes un ESCRITO DE PONENCIA completo, en estilo judicial argentino, listo para presentar.
+
+CAUSA: ${ctx.caratula||""}
+${ctx.expte?"EXPEDIENTE: "+ctx.expte:""}
+${ctx.juzgado?"JUZGADO: "+ctx.juzgado:""}
+${ctx.codemandados?"PARTES: "+ctx.codemandados:""}
+${ctx.estrategia?"ESTRATEGIA DEFINIDA: "+ctx.estrategia:""}
+
+PUNTOS / ARGUMENTO DE PARTIDA (desarrollar y ampliar):
+${txt}
+
+BASE DE CONOCIMIENTO DEL ESTUDIO (jurisprudencia, doctrina y modelos relevantes — citalos donde corresponda con tribunal):
+${refStr}
+
+TAREA:
+Redactá el escrito de ponencia completo, con estructura formal (encabezado, hechos si corresponde, fundamentos de derecho desarrollados punto por punto, y petitorio). Usá lenguaje técnico jurídico preciso, incorporá las citas de jurisprudencia y doctrina de la base de conocimiento donde sea pertinente, y desarrollá cada punto en profundidad — no resumas, expandí la argumentación. Respondé todo en español (castellano rioplatense/jurídico argentino).`;
+
+  document.getElementById("prompt-out").value=prompt;
+  document.getElementById("prompt-wrap").className="ia-wrap show";
+  document.getElementById("prompt-out").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+function copyPromptPonencia(){
+  const val=document.getElementById("prompt-out").value;
+  if(!val)return;
+  navigator.clipboard.writeText(val).catch(()=>{});
+  const b=document.getElementById("btn-copy-prompt");
+  b.textContent="✓ copiado";setTimeout(()=>{b.textContent="copiar";},2000);
+}
+
+function descargarPromptPonencia(){
+  const val=document.getElementById("prompt-out").value;
+  if(!val)return;
+  const ctx=expActual||{};
+  const nombre=((ctx.caratula||"prompt-ponencia").substring(0,60).replace(/[^a-zA-Z0-9 ._-]/g,"").trim().replace(/\s+/g,"_"))||"prompt-ponencia";
+  const blob=new Blob([val],{type:"text/plain;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=nombre+".txt";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ── PRÓXIMO ARGUMENTO ──
 async function generarProximo(txt,iaResult,fallos){
   if(!txt||txt.length<100)return;
@@ -1510,6 +1613,7 @@ ed.addEventListener("input",function(){
   document.getElementById("chars").textContent=txt.length+" chars";
   document.getElementById("btn-ia").disabled=txt.trim().length<20;
   document.getElementById("btn-web-arg").disabled=txt.trim().length<20;
+  document.getElementById("btn-prompt-ponencia").disabled=txt.trim().length<20;
   if(timer)clearTimeout(timer);
   if(txt.trim().length>=40){
     timer=setTimeout(()=>autoSearch(txt),1800);
