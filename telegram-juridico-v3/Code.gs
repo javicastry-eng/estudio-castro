@@ -210,7 +210,7 @@ const CORRECT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyLHjfsnEfl
 const VOYAGE_KEY = PROPS.getProperty("VOYAGE_KEY");
 const VOYAGE_API = "https://api.voyageai.com/v1/embeddings";
 function verificarPropiedades() {
-  ["BOT_TOKEN", "ANTHROPIC_KEY", "SB_KEY", "VOYAGE_KEY"].forEach(function(nombre) {
+  ["BOT_TOKEN", "ANTHROPIC_KEY", "SB_KEY", "VOYAGE_KEY", "NOTION_TOKEN", "MOTOR_SAVE_TOKEN"].forEach(function(nombre) {
     Logger.log(nombre + ": " + (PROPS.getProperty(nombre) ? "configurada" : "FALTA"));
   });
 }
@@ -284,6 +284,15 @@ function doPost(e) {
   try {
     var update = JSON.parse(e.postData.contents);
 
+    // v3.20 (20/09/2026): mismo Web App, ruta nueva — el Motor Jurisprudencial
+    // (página estática, sin backend propio) manda acá los escritos ya
+    // trabajados en Claude.ai para que este script (que ya tiene acceso a
+    // Drive y a Notion) los guarde. No es un update de Telegram, así que se
+    // desvía ANTES del resto del parsing (que asume forma de update).
+    if (update.action === "guardar_escrito") {
+      return manejarGuardarEscrito(update);
+    }
+
     // v3.11 (v118): log de entrada — para saber SIEMPRE qué llegó, incluso
     // si algo después falla en silencio.
     var tipoUpdate = update.callback_query ? "callback_query" : (update.message && update.message.document ? "documento" : (update.message ? "mensaje_texto" : "otro"));
@@ -328,6 +337,138 @@ function doPost(e) {
     } catch(err2) { Logger.log("doPost: no se pudo avisar el error por Telegram: " + err2.message); }
   }
   return output;
+}
+
+// ============================================================
+// GUARDAR ESCRITO DESDE EL MOTOR JURISPRUDENCIAL — v1 (20/09/2026)
+// ============================================================
+// El Motor (motor_jurisprudencial_JHC.html, página estática en GitHub
+// Pages) no tiene forma segura de escribir directo a Drive/Notion desde
+// el navegador — necesitaría su propio flujo OAuth. En cambio, este mismo
+// Web App (que ya corre con la cuenta de Google del Estudio y ya tiene
+// NOTION_TOKEN en Script Properties) hace de backend: recibe el escrito
+// ya trabajado en Claude.ai y lo guarda.
+//
+// Protección: requiere que el Motor mande un token que coincida con la
+// Script Property MOTOR_SAVE_TOKEN — si no, es un endpoint público (Web
+// App "Anyone") que cualquiera con la URL podría usar para escribir en
+// el Drive/Notion del Estudio. Configurar UNA vez:
+//   Project Settings → Script Properties → Add script property
+//   → nombre: MOTOR_SAVE_TOKEN, valor: (el mismo que se carga en el
+//   Motor, en config → "Token de guardado").
+function manejarGuardarEscrito(body) {
+  var output = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
+  try {
+    var tokenEsperado = PROPS.getProperty("MOTOR_SAVE_TOKEN");
+    if (!tokenEsperado || body.token !== tokenEsperado) {
+      output.setContent(JSON.stringify({ ok: false, error: "Token inválido o no configurado (ver MOTOR_SAVE_TOKEN en Script Properties)." }));
+      return output;
+    }
+
+    var titulo = String(body.titulo || "Escrito sin título").substring(0, 150);
+    var contenido = String(body.contenido || "");
+    if (!contenido.trim()) {
+      output.setContent(JSON.stringify({ ok: false, error: "El escrito está vacío." }));
+      return output;
+    }
+    var destino = body.destino || "drive";
+    var causa = body.causa || {};
+    var resultado = { ok: true };
+
+    if (destino === "drive" || destino === "ambos") {
+      try {
+        resultado.drive_url = guardarEscritoEnDrive(titulo, contenido, causa);
+      } catch (errDrive) {
+        resultado.drive_error = errDrive.message;
+      }
+    }
+    if (destino === "notion" || destino === "ambos") {
+      try {
+        resultado.notion_url = guardarEscritoEnNotion(titulo, contenido, causa);
+      } catch (errNotion) {
+        resultado.notion_error = errNotion.message;
+      }
+    }
+    output.setContent(JSON.stringify(resultado));
+  } catch (err) {
+    Logger.log("manejarGuardarEscrito: excepción — " + err.message + " | stack: " + err.stack);
+    output.setContent(JSON.stringify({ ok: false, error: err.message }));
+  }
+  return output;
+}
+
+// Guarda el escrito como Google Doc. Si la causa tiene carpeta propia en
+// Drive (link_drive_carpeta en la tabla expedientes), lo guarda ahí
+// adentro; si no, en una carpeta genérica "ESCRITOS MOTOR JURISPRUDENCIAL"
+// dentro de DRIVE_ROOT.
+function guardarEscritoEnDrive(titulo, contenido, causa) {
+  var carpetaDestino = null;
+  if (causa.link_drive_carpeta) {
+    var idCarpeta = extraerIdDriveDeUrl(causa.link_drive_carpeta);
+    if (idCarpeta) {
+      try { carpetaDestino = DriveApp.getFolderById(idCarpeta); } catch (e) { carpetaDestino = null; }
+    }
+  }
+  if (!carpetaDestino) {
+    var root = DriveApp.getFolderById(DRIVE_ROOT);
+    var it = root.getFoldersByName("ESCRITOS MOTOR JURISPRUDENCIAL");
+    carpetaDestino = it.hasNext() ? it.next() : root.createFolder("ESCRITOS MOTOR JURISPRUDENCIAL");
+  }
+  var doc = DocumentApp.create(titulo);
+  doc.getBody().setText(contenido);
+  doc.saveAndClose();
+  var archivo = DriveApp.getFileById(doc.getId());
+  carpetaDestino.addFile(archivo);
+  DriveApp.getRootFolder().removeFile(archivo); // sacarlo de "Mi unidad" raíz, queda solo en carpetaDestino
+  return archivo.getUrl();
+}
+
+function extraerIdDriveDeUrl(url) {
+  var m = String(url).match(/[-\w]{25,}/);
+  return m ? m[0] : null;
+}
+
+// Crea una subpágina de Notion dentro de la página de la causa
+// (link_notion_pagina en expedientes). Si la causa no tiene página de
+// Notion vinculada, tira error explícito — no hay dónde colgarla.
+function guardarEscritoEnNotion(titulo, contenido, causa) {
+  var notionToken = PROPS.getProperty("NOTION_TOKEN");
+  if (!notionToken) throw new Error("Falta NOTION_TOKEN en Script Properties.");
+
+  var parentPageId = causa.link_notion_pagina ? extraerIdNotionDeUrl(causa.link_notion_pagina) : null;
+  if (!parentPageId) throw new Error("La causa no tiene página de Notion vinculada (link_notion_pagina).");
+
+  // Notion limita cada bloque de texto a 2000 caracteres y 100 bloques
+  // por request de creación — partir el contenido en chunks.
+  var bloques = [];
+  var texto = contenido;
+  while (texto.length > 0 && bloques.length < 100) {
+    bloques.push({
+      object: "block", type: "paragraph",
+      paragraph: { rich_text: [{ type: "text", text: { content: texto.substring(0, 1900) } }] }
+    });
+    texto = texto.substring(1900);
+  }
+
+  var res = UrlFetchApp.fetch("https://api.notion.com/v1/pages", {
+    method: "post",
+    headers: { "Authorization": "Bearer " + notionToken, "Notion-Version": "2022-06-28", "Content-Type": "application/json" },
+    payload: JSON.stringify({
+      parent: { page_id: parentPageId },
+      properties: { title: { title: [{ text: { content: titulo } }] } },
+      children: bloques
+    }),
+    muteHttpExceptions: true
+  });
+  var data = JSON.parse(res.getContentText());
+  if (!data.url) throw new Error("Notion respondió sin URL — " + res.getContentText().substring(0, 300));
+  return data.url;
+}
+
+function extraerIdNotionDeUrl(url) {
+  var clean = String(url).split("?")[0];
+  var m = clean.match(/([0-9a-f]{32})$/i);
+  return m ? m[1] : null;
 }
 
 // ============================================================
