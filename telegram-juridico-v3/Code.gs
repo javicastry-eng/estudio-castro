@@ -438,6 +438,19 @@ function guardarEscritoEnNotion(titulo, contenido, causa) {
   var parentPageId = causa.link_notion_pagina ? extraerIdNotionDeUrl(causa.link_notion_pagina) : null;
   if (!parentPageId) throw new Error("La causa no tiene página de Notion vinculada (link_notion_pagina).");
 
+  // 20/09/2026: pasó una vez que link_notion_pagina apuntaba a la base
+  // CAUSAS entera (el link con "?v=...&source=copy_link" del botón
+  // "Copy link" de una vista) en vez de a la página propia de la causa.
+  // Crear una página ahí adentro habría generado una fila nueva rara en
+  // CAUSAS — mejor chequear antes y avisar claro.
+  var check = UrlFetchApp.fetch("https://api.notion.com/v1/pages/" + parentPageId, {
+    headers: { "Authorization": "Bearer " + notionToken, "Notion-Version": "2022-06-28" },
+    muteHttpExceptions: true
+  });
+  if (check.getResponseCode() !== 200) {
+    throw new Error("link_notion_pagina de esta causa no apunta a una página válida de Notion (¿es un link a la base CAUSAS entera en vez de a la fila de la causa? corregir en Supabase → expedientes).");
+  }
+
   // Notion limita cada bloque de texto a 2000 caracteres y 100 bloques
   // por request de creación — partir el contenido en chunks.
   var bloques = [];
