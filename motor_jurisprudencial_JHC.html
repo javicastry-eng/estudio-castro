@@ -1269,12 +1269,35 @@ Redactá el escrito de ponencia completo, con estructura formal (encabezado, hec
   document.getElementById("prompt-out").scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 
+// Copia con confirmación real: si navigator.clipboard falla (bloqueado por
+// el navegador, contexto no seguro, etc.) cae a un textarea temporal +
+// execCommand, y si ESO también falla recién ahí avisa que no copió —
+// antes el botón decía "✓ copiado" siempre, aunque no hubiera copiado nada.
+async function copiarAlPortapapeles(texto,btnEl,textoOriginal){
+  let ok=false;
+  try{
+    await navigator.clipboard.writeText(texto);
+    ok=true;
+  }catch(e){
+    try{
+      const ta=document.createElement("textarea");
+      ta.value=texto;ta.style.position="fixed";ta.style.left="-9999px";
+      document.body.appendChild(ta);ta.focus();ta.select();
+      ok=document.execCommand("copy");
+      document.body.removeChild(ta);
+    }catch(e2){ok=false;}
+  }
+  if(btnEl){
+    btnEl.textContent=ok?"✓ copiado":"✗ no copió — seleccioná y Ctrl+C";
+    setTimeout(()=>{btnEl.textContent=textoOriginal;},ok?2000:3500);
+  }
+  return ok;
+}
+
 function copyPromptPonencia(){
   const val=document.getElementById("prompt-out").value;
   if(!val)return;
-  navigator.clipboard.writeText(val).catch(()=>{});
-  const b=document.getElementById("btn-copy-prompt");
-  b.textContent="✓ copiado";setTimeout(()=>{b.textContent="copiar";},2000);
+  copiarAlPortapapeles(val,document.getElementById("btn-copy-prompt"),"copiar");
 }
 
 function descargarPromptPonencia(){
@@ -1397,15 +1420,17 @@ function renderFallos(fallos,cid,isManual){
   }).join("");
 }
 
-function copyCita(id,text){
-  navigator.clipboard.writeText(text).catch(()=>{});
+async function copyCita(id,text){
   const b=document.getElementById("bc-"+id);
-  if(b){b.textContent="✓ copiado";b.classList.add("copied");setTimeout(()=>{b.textContent="copiar cita";b.classList.remove("copied");},2000);}
+  const ok=await copiarAlPortapapeles(text,null,"copiar cita");
+  if(b){
+    b.textContent=ok?"✓ copiado":"✗ no copió";
+    if(ok)b.classList.add("copied");
+    setTimeout(()=>{b.textContent="copiar cita";b.classList.remove("copied");},ok?2000:3500);
+  }
 }
 function copyIA(){
-  navigator.clipboard.writeText(iaText).catch(()=>{});
-  const b=document.querySelector(".btn-copy-sm");
-  if(b){b.textContent="✓ copiado";setTimeout(()=>{b.textContent="copiar";},2000);}
+  copiarAlPortapapeles(iaText,document.querySelector(".btn-copy-sm"),"copiar");
 }
 function switchTab(t){
   ["a","m","w","r"].forEach(x=>{
