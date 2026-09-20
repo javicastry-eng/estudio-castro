@@ -455,7 +455,7 @@ textarea::placeholder{color:var(--text3)}
         <span class="p-label-right" id="chars" style="color:var(--text3);font-family:var(--mono);font-size:10px">0 chars</span>
       </div>
       <textarea id="editor"
-        placeholder="Seleccioná una causa y comenzá a redactar tu argumento. La base de jurisprudencia buscará automáticamente coincidencias semánticas mientras escribís..."></textarea>
+        placeholder="Redactá un argumento de una causa, o pegá una consulta suelta sobre un tema (no hace falta seleccionar causa). La base de jurisprudencia buscará automáticamente coincidencias semánticas mientras escribís..."></textarea>
     </div>
 
     <div class="sugerencia-wrap" id="sug-wrap">
@@ -1167,25 +1167,34 @@ function buildRefStr(fallos){
 
 function buildPromptIA(txt,ctx,refStr,conWeb){
   const r=getRama();
+  // Sin causa seleccionada (o "Causa no seleccionada") = consulta suelta sobre un tema,
+  // no necesariamente un argumento para insertar en un escrito judicial de un expediente.
+  const suelta=!ctx.caratula||ctx.caratula==="Causa no seleccionada";
   const webInstr=conWeb?`
-Usá la herramienta web_search para buscar jurisprudencia reciente de ${r.tribunales} que complemente el argumento. Buscá específicamente sobre los temas del argumento y la causa.`:"";
-  return `${r.persona}${webInstr}${r.norma?"\nNormativa de referencia de esta rama: "+r.norma+".":""}
-
+Usá la herramienta web_search para buscar jurisprudencia reciente de ${r.tribunales} que complemente ${suelta?"la consulta":"el argumento"}. Buscá específicamente sobre los temas planteados${suelta?"":" y la causa"}.`:"";
+  const contextoCausa=suelta?"":`
 CAUSA: ${ctx.caratula||""}
 ${ctx.expte?"EXPEDIENTE: "+ctx.expte:""}
 ${ctx.juzgado?"JUZGADO: "+ctx.juzgado:""}
 ${ctx.codemandados?"PARTES: "+ctx.codemandados:""}
 ${ctx.estrategia?"ESTRATEGIA: "+ctx.estrategia:""}
-
-ARGUMENTO A MEJORAR:
+`;
+  const tarea=suelta?`TAREA (consulta general, sin causa asociada — no es un escrito a reescribir):
+1. ENCUADRE: identificá el/los instituto(s) jurídico(s) en juego y la normativa aplicable, citando artículos concretos.
+2. CÓMO ENCARARLO: análisis estratégico — vías posibles, riesgos, plazos si corresponden, y recomendación concreta.
+3. JURISPRUDENCIA DE RESPALDO: citá los fallos más pertinentes de la base y/o de la búsqueda web, con tribunal.
+Respondé como si le explicaras a un colega abogado cómo abordar la cuestión, en prosa clara — NO como un escrito judicial ni asumas que hay una causa iniciada.`:`TAREA:
+1. OBSERVACIONES (2-3 líneas): qué reforzar, qué citas incorporar, qué podría ser cuestionado.
+2. VERSIÓN MEJORADA: reescribí en estilo escrito judicial argentino, listo para insertar en un escrito. Incorporá citas de jurisprudencia con tribunal. Usá lenguaje técnico preciso. Si buscaste en web, incorporá los fallos más relevantes encontrados.`;
+  return `${r.persona}${webInstr}${r.norma?"\nNormativa de referencia de esta rama: "+r.norma+".":""}
+${contextoCausa}
+${suelta?"CONSULTA":"ARGUMENTO A MEJORAR"}:
 ${txt}
 
 BASE DE CONOCIMIENTO DEL ESTUDIO:
 ${refStr}
 
-TAREA:
-1. OBSERVACIONES (2-3 líneas): qué reforzar, qué citas incorporar, qué podría ser cuestionado.
-2. VERSIÓN MEJORADA: reescribí en estilo escrito judicial argentino, listo para insertar en un escrito. Incorporá citas de jurisprudencia con tribunal. Usá lenguaje técnico preciso. Si buscaste en web, incorporá los fallos más relevantes encontrados.`;
+${tarea}`;
 }
 
 // ── PRÓXIMO ARGUMENTO ──
