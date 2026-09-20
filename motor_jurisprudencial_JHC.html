@@ -839,6 +839,7 @@ async function autoWebSearch(txt){
         tools:[{type:"web_search_20250305",name:"web_search"}],
         messages:[{role:"user",content:`Buscá jurisprudencia argentina laboral sobre: "${temasBusqueda}"
 Buscá en CNAT, CSJN, Infojus, ElDial. Solo fallos relevantes.
+Respondé siempre en español (castellano rioplatense/jurídico argentino), aunque las fuentes que encuentres estén en otro idioma.
 Devolvé JSON sin texto extra:
 {"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis en 1-2 oraciones","url":"url"}]}`}]
       })
@@ -968,6 +969,7 @@ async function doManual(){
           tools:[{type:"web_search_20250305",name:"web_search"}],
           messages:[{role:"user",content:`Buscá jurisprudencia argentina sobre: "${q}"
 Buscá en CNAT, CSJN, Infojus, ElDial, Poder Judicial.
+Respondé siempre en español (castellano rioplatense/jurídico argentino), aunque las fuentes que encuentres estén en otro idioma.
 Devolvé JSON sin texto extra:
 {"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis en 1-2 oraciones","url":"url"}]}`}]
         })
@@ -1019,6 +1021,7 @@ async function doWebSearch(){
         tools:[{type:"web_search_20250305",name:"web_search"}],
         messages:[{role:"user",content:`Busca jurisprudencia argentina sobre: "${q}"
 Buscá específicamente en CSJN, CNAT, Cámara Nacional del Trabajo, Infojus, ElDial y Poder Judicial Argentina.
+Respondé siempre en español (castellano rioplatense/jurídico argentino), aunque las fuentes que encuentres estén en otro idioma.
 Devolvé exactamente en este formato JSON (sin texto extra, sin markdown):
 {"resultados":[{"titulo":"nombre del fallo","tribunal":"tribunal","holding":"síntesis doctrinaria en 1-2 oraciones","url":"url si disponible","relevancia":"alta|media"}]}`}]
       })
@@ -1143,7 +1146,7 @@ function buildRefStr(fallos){
 function buildPromptIA(txt,ctx,refStr,conWeb){
   const webInstr=conWeb?`
 Usá la herramienta web_search para buscar jurisprudencia reciente de CNAT, CSJN e Infojus que complemente el argumento. Buscá específicamente sobre los temas del argumento y la causa.`:"";
-  return `Sos el Dr. Javier Castro, abogado laboralista argentino (CPACF T°102 F°174), experto en CNAT.${webInstr}
+  return `Sos el Dr. Javier Castro, abogado laboralista argentino (CPACF T°102 F°174), experto en CNAT. Respondé siempre en español (castellano rioplatense/jurídico argentino), incluso si las fuentes que encontraste en la búsqueda web están en otro idioma — nunca mezcles idiomas en la respuesta.${webInstr}
 
 CAUSA: ${ctx.caratula||""}
 ${ctx.expte?"EXPEDIENTE: "+ctx.expte:""}
@@ -1461,7 +1464,7 @@ async function buscarWebParaRevisor(texto) {
       body: JSON.stringify({
         model:"claude-haiku-4-5-20251001", max_tokens:800,
         tools:[{type:"web_search_20250305",name:"web_search"}],
-        messages:[{role:"user",content:`Buscá jurisprudencia argentina sobre: "${temas}"\nBuscá en CNAT, CSJN, Infojus, ElDial.\nDevolvé JSON:\n{"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis","url":"url"}]}`}]
+        messages:[{role:"user",content:`Buscá jurisprudencia argentina sobre: "${temas}"\nBuscá en CNAT, CSJN, Infojus, ElDial.\nRespondé siempre en español (castellano rioplatense/jurídico argentino), aunque las fuentes que encuentres estén en otro idioma.\nDevolvé JSON:\n{"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis","url":"url"}]}`}]
       })
     });
     const data = await res.json();
