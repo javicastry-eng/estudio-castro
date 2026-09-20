@@ -169,7 +169,7 @@ body{font-family:var(--serif);background:var(--bg);color:var(--text);min-height:
 /* ── MAIN GRID ── */
 .main{display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:0;overflow:hidden}
 .panel{display:flex;flex-direction:column;overflow:hidden}
-.panel-left{border-right:1px solid var(--border);padding:16px 20px;gap:12px}
+.panel-left{border-right:1px solid var(--border);padding:16px 20px;gap:12px;overflow-y:auto}
 .panel-right{overflow-y:auto;padding:16px 20px}
 
 /* ── PANEL LABEL ── */
@@ -217,6 +217,19 @@ textarea::placeholder{color:var(--text3)}
 }
 .btn-web-arg:hover{background:var(--blue);color:#fff}
 .btn-web-arg:disabled{opacity:.3;cursor:not-allowed}
+.btn-ponencia{
+  padding:10px 14px;background:var(--purple-dim);border:1px solid var(--purple);
+  color:var(--purple);font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;border-radius:2px;cursor:pointer;transition:all .2s;
+}
+.btn-ponencia:hover{background:var(--purple);color:#fff}
+.btn-ponencia:disabled{opacity:.3;cursor:not-allowed}
+.prompt-out{
+  background:var(--bg2);border:1px solid var(--border2);border-left:2px solid var(--purple);
+  border-radius:0 2px 2px 0;padding:14px 16px;font-size:12px;line-height:1.7;
+  color:var(--text2);white-space:pre-wrap;max-height:320px;overflow-y:auto;
+  font-family:var(--mono);width:100%;resize:vertical;box-sizing:border-box;
+}
 
 /* ── IA OUTPUT ── */
 .ia-wrap{display:none;flex-shrink:0}
@@ -391,12 +404,14 @@ textarea::placeholder{color:var(--text3)}
     <div class="setup-sub">Ingresá tus credenciales para activar el sistema. Se guardan únicamente en tu navegador.</div>
     <label class="setup-label">Supabase URL</label>
     <input class="setup-input" id="cfg-url" placeholder="https://xxxx.supabase.co" />
-    <label class="setup-label">Supabase Secret Key</label>
-    <input class="setup-input" id="cfg-key" type="password" placeholder="sb_secret_..." />
+    <label class="setup-label">Supabase Publishable Key</label>
+    <input class="setup-input" id="cfg-key" type="password" placeholder="sb_publishable_..." />
     <label class="setup-label">Anthropic API Key</label>
     <input class="setup-input" id="cfg-ant" type="password" placeholder="sk-ant-..." />
     <label class="setup-label">Voyage AI API Key</label>
     <input class="setup-input" id="cfg-voy" type="password" placeholder="pa-..." />
+    <label class="setup-label">Token de guardado (opcional — para guardar escritos en Drive/Notion)</label>
+    <input class="setup-input" id="cfg-save" type="password" placeholder="el mismo valor que MOTOR_SAVE_TOKEN en Apps Script" />
     <button class="setup-btn" onclick="saveConfig()">▶ activar sistema</button>
     <div class="setup-note">Las claves se guardan solo en localStorage. Nunca salen de tu dispositivo.</div>
   </div>
@@ -467,6 +482,12 @@ textarea::placeholder{color:var(--text3)}
       <button class="btn-ia" id="btn-ia" onclick="doIA()" disabled>◈ mejorar con IA</button>
       <button class="btn-web-arg" id="btn-web-arg" onclick="doIAconWeb()" disabled title="Mejorar argumento buscando jurisprudencia online">🌐 + web</button>
     </div>
+    <div class="btn-row">
+      <button class="btn-ponencia" id="btn-prompt-ponencia" onclick="generarPromptPonencia()" disabled title="Arma un prompt con la causa, tu argumento y las citas encontradas, listo para pegar en Claude">📋 generar prompt ponencia</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn-ponencia" id="btn-generar-escrito" onclick="generarEscritoCompleto()" disabled title="Genera el escrito completo directo (sin ir a Claude.ai) y lo deja en la caja de guardar para revisar antes de guardarlo">⚡ generar escrito completo (revisar y guardar)</button>
+    </div>
 
     <div class="ia-wrap" id="ia-wrap">
       <div class="ia-header">
@@ -474,6 +495,27 @@ textarea::placeholder{color:var(--text3)}
         <button class="btn-copy-sm" onclick="copyIA()">copiar</button>
       </div>
       <div class="ia-box" id="ia-out"></div>
+    </div>
+
+    <div class="ia-wrap" id="prompt-wrap">
+      <div class="ia-header">
+        prompt para escrito de ponencia — pegalo en Claude
+        <button class="btn-copy-sm" id="btn-copy-prompt" onclick="copyPromptPonencia()">copiar</button>
+        <button class="btn-copy-sm" id="btn-download-prompt" onclick="descargarPromptPonencia()">descargar .txt</button>
+      </div>
+      <textarea class="prompt-out" id="prompt-out" rows="10" readonly onclick="this.select()"></textarea>
+    </div>
+
+    <div class="ia-wrap show" id="guardar-wrap">
+      <div class="ia-header">💾 guardar escrito final (después de trabajarlo en Claude)</div>
+      <input class="setup-input" id="guardar-titulo" style="margin-bottom:8px" placeholder="Título del escrito (para Drive/Notion)" />
+      <textarea class="prompt-out" id="guardar-contenido" rows="8" placeholder="Pegá acá el escrito final que te devolvió Claude..."></textarea>
+      <div style="display:flex;gap:16px;align-items:center;margin:10px 0;font-family:var(--mono);font-size:11px;color:var(--text2)">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="guardar-drive" checked> Drive</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="guardar-notion"> Notion</label>
+        <button class="btn-ponencia" id="btn-guardar-escrito" onclick="guardarEscritoFinal()" style="margin-left:auto;flex:none;padding:8px 16px">guardar</button>
+      </div>
+      <div id="guardar-status" style="font-family:var(--mono);font-size:11px;color:var(--text3);line-height:1.8"></div>
     </div>
   </div>
 
@@ -601,7 +643,11 @@ El revisor va a:
 
 <script>
 // ── CREDENCIALES ──
-let SB, SK, ANT_KEY, VOY_KEY;
+let SB, SK, ANT_KEY, VOY_KEY, SAVE_TOKEN;
+// Web App del bot de Telegram (telegram-juridico-v3) — la URL no es secreta
+// (es solo el endpoint), lo que la protege es el token de guardado que
+// manda cada request. Ver manejarGuardarEscrito() en Code.gs.
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLHjfsnEflasjEaqkZDWOQeA8V8IsNVU760Q8-oSu8RrLbYqI25vBMp5iZRzg7LwtktQ/exec";
 let expedientes = [], expActual = null, autoFallos = [], iaText = "", timer = null, sugTimer = null;
 
 const HOLCIM_FALLBACK = {
@@ -660,11 +706,13 @@ function saveConfig(){
   const key=document.getElementById("cfg-key").value.trim();
   const ant=document.getElementById("cfg-ant").value.trim();
   const voy=document.getElementById("cfg-voy").value.trim();
+  const save=document.getElementById("cfg-save").value.trim();
   if(!url||!key||!ant){alert("Completá al menos los tres primeros campos.");return;}
   localStorage.setItem("jhc_sb_url",url);
   localStorage.setItem("jhc_sb_key",key);
   localStorage.setItem("jhc_ant_key",ant);
   if(voy)localStorage.setItem("jhc_voy_key",voy);
+  if(save)localStorage.setItem("jhc_save_token",save);
   loadApp();
 }
 function loadApp(){
@@ -672,6 +720,7 @@ function loadApp(){
   SK=localStorage.getItem("jhc_sb_key");
   ANT_KEY=localStorage.getItem("jhc_ant_key");
   VOY_KEY=localStorage.getItem("jhc_voy_key")||"";
+  SAVE_TOKEN=localStorage.getItem("jhc_save_token")||"";
   if(!SB||!SK||!ANT_KEY){
     document.getElementById("setup-screen").style.display="flex";
     document.getElementById("app").className="app";return;
@@ -682,11 +731,18 @@ function loadApp(){
 }
 function resetConfig(){
   if(!confirm("¿Cambiar credenciales?"))return;
-  ["jhc_sb_url","jhc_sb_key","jhc_ant_key","jhc_voy_key"].forEach(k=>localStorage.removeItem(k));
+  ["jhc_sb_url","jhc_sb_key","jhc_ant_key","jhc_voy_key","jhc_save_token"].forEach(k=>localStorage.removeItem(k));
   location.reload();
 }
 
 // ── SUPABASE ──
+// 20/09/2026: SK ahora es la publishable key (sb_publishable_...), no la
+// secret. Supabase empezó a rechazar el uso de secret keys desde el
+// navegador ("Forbidden use of secret API key in browser") — la legacy
+// service_role sí lo permitía (insegura pero funcionaba). El Motor solo
+// hace lecturas, así que se agregaron políticas RLS de SELECT para el rol
+// anon en jurisprudencia/doctrina/modelos/expedientes y listo, la
+// publishable key alcanza sin bypasear RLS.
 async function sbGet(table,params){
   const H={"apikey":SK,"Authorization":"Bearer "+SK};
   const qs=Object.entries(params).map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&');
@@ -702,14 +758,21 @@ async function sbRpc(fn,body){
 }
 
 // ── VOYAGE EMBEDDINGS ──
+// 20/09/2026: era "voyage-3-lite", pero las columnas embedding de Supabase
+// son vector(1024) (generadas por el bot con voyage-4-lite) — el mismatch
+// de dimensión hacía que match_jurisprudencia/doctrina/modelos devolvieran
+// 400 Bad Request. Tiene que ser el mismo modelo que usa el bot siempre.
 async function getEmbeddingVoyage(text){
   if(!VOY_KEY) return null;
   const r=await fetch("https://api.voyageai.com/v1/embeddings",{
     method:"POST",
     headers:{"Content-Type":"application/json","Authorization":"Bearer "+VOY_KEY},
-    body:JSON.stringify({model:"voyage-3-lite",input:[text.substring(0,2000)],input_type:"query"})
+    body:JSON.stringify({model:"voyage-4-lite",input:[text.substring(0,2000)],input_type:"query"})
   });
-  if(!r.ok) return null;
+  if(!r.ok){
+    console.error("Voyage embeddings error:",r.status,await r.text());
+    return null;
+  }
   const d=await r.json();
   return d.data?.[0]?.embedding||null;
 }
@@ -810,9 +873,9 @@ async function autoSearch(txt){
       if(emb){
         usandoVoyage=true;
         const [rJ,rD,rM]=await Promise.all([
-          sbRpc("match_jurisprudencia",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:6}).catch(()=>[]),
-          sbRpc("match_doctrina",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:3}).catch(()=>[]),
-          sbRpc("match_modelos",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:2}).catch(()=>[])
+          sbRpc("match_jurisprudencia",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:6}).catch(e=>{console.error("match_jurisprudencia error:",e);return [];}),
+          sbRpc("match_doctrina",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:3}).catch(e=>{console.error("match_doctrina error:",e);return [];}),
+          sbRpc("match_modelos",{query_embedding:emb,match_threshold:UMBRAL_SEMANTICO,match_count:2}).catch(e=>{console.error("match_modelos error:",e);return [];})
         ]);
         // Solo incluir resultados sobre el umbral
         results=[
@@ -869,10 +932,11 @@ async function autoWebSearch(txt){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-haiku-4-5",max_tokens:800,
+        model:"claude-haiku-4-5-20251001",max_tokens:800,
         tools:[{type:"web_search_20250305",name:"web_search"}],
         messages:[{role:"user",content:`Buscá jurisprudencia argentina de ${getRama().label.toLowerCase()} sobre: "${temasBusqueda}"
 Buscá en ${getRama().tribunales}. Solo fallos relevantes.
+Respondé siempre en español (castellano rioplatense/jurídico argentino), aunque las fuentes que encuentres estén en otro idioma.
 Devolvé JSON sin texto extra:
 {"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis en 1-2 oraciones","url":"url"}]}`}]
       })
@@ -923,7 +987,7 @@ async function generarSugerencia(txt,fallos){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-haiku-4-5",max_tokens:180,
+        model:"claude-haiku-4-5-20251001",max_tokens:180,
         messages:[{role:"user",content:`Sos asistente jurídico argentino, especializado en ${getRama().label.toLowerCase()}.
 Argumento en redacción: "${txt.substring(0,400)}"
 Fallos disponibles: ${refStr}
@@ -958,9 +1022,9 @@ async function doManual(){
       const emb=await getEmbeddingVoyage(q);
       if(emb){
         const[rJ,rD,rM]=await Promise.all([
-          sbRpc("match_jurisprudencia",{query_embedding:emb,match_threshold:0.25,match_count:8}).catch(()=>[]),
-          sbRpc("match_doctrina",{query_embedding:emb,match_threshold:0.25,match_count:4}).catch(()=>[]),
-          sbRpc("match_modelos",{query_embedding:emb,match_threshold:0.25,match_count:3}).catch(()=>[])
+          sbRpc("match_jurisprudencia",{query_embedding:emb,match_threshold:0.25,match_count:8}).catch(e=>{console.error("match_jurisprudencia error:",e);return [];}),
+          sbRpc("match_doctrina",{query_embedding:emb,match_threshold:0.25,match_count:4}).catch(e=>{console.error("match_doctrina error:",e);return [];}),
+          sbRpc("match_modelos",{query_embedding:emb,match_threshold:0.25,match_count:3}).catch(e=>{console.error("match_modelos error:",e);return [];})
         ]);
         results=[
           ...rJ.map(f=>({...f,_tipo:"juris",_sim:f.similarity})),
@@ -999,10 +1063,11 @@ async function doManual(){
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
         body:JSON.stringify({
-          model:"claude-haiku-4-5",max_tokens:1000,
+          model:"claude-haiku-4-5-20251001",max_tokens:1000,
           tools:[{type:"web_search_20250305",name:"web_search"}],
           messages:[{role:"user",content:`Buscá jurisprudencia argentina de ${getRama().label.toLowerCase()} sobre: "${q}"
 Buscá en ${getRama().tribunales}, Poder Judicial.
+Respondé siempre en español (castellano rioplatense/jurídico argentino), aunque las fuentes que encuentres estén en otro idioma.
 Devolvé JSON sin texto extra:
 {"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis en 1-2 oraciones","url":"url"}]}`}]
         })
@@ -1050,10 +1115,11 @@ async function doWebSearch(){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1500,
+        model:"claude-sonnet-5",max_tokens:1500,
         tools:[{type:"web_search_20250305",name:"web_search"}],
         messages:[{role:"user",content:`Busca jurisprudencia argentina de ${getRama().label.toLowerCase()} sobre: "${q}"
 Buscá específicamente en ${getRama().tribunales} y Poder Judicial Argentina.
+Respondé siempre en español (castellano rioplatense/jurídico argentino), aunque las fuentes que encuentres estén en otro idioma.
 Devolvé exactamente en este formato JSON (sin texto extra, sin markdown):
 {"resultados":[{"titulo":"nombre del fallo","tribunal":"tribunal","holding":"síntesis doctrinaria en 1-2 oraciones","url":"url si disponible","relevancia":"alta|media"}]}`}]
       })
@@ -1109,14 +1175,19 @@ async function doIA(){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1200,
+        model:"claude-sonnet-5",max_tokens:1200,
         messages:[{role:"user",content:buildPromptIA(txt,ctx,refStr,false)}]
       })
     });
     const d=await res.json();
-    iaText=(d.content||[]).map(b=>b.text||"").join("");
-    out.textContent=iaText||"Sin respuesta.";
-    generarProximo(txt,iaText,autoFallos);
+    if(!res.ok||d.error){
+      console.error("Anthropic API error:",res.status,d);
+      out.textContent="Error IA ("+res.status+"): "+(d.error?.message||JSON.stringify(d));
+    }else{
+      iaText=(d.content||[]).map(b=>b.text||"").join("");
+      out.textContent=iaText||"Sin respuesta.";
+      generarProximo(txt,iaText,autoFallos);
+    }
   }catch(e){out.textContent="Error IA: "+e.message;}
 
   btn.disabled=false;btn.textContent="◈ mejorar con IA";
@@ -1140,15 +1211,20 @@ async function doIAconWeb(){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",max_tokens:1500,
+        model:"claude-sonnet-5",max_tokens:1500,
         tools:[{type:"web_search_20250305",name:"web_search"}],
         messages:[{role:"user",content:buildPromptIA(txt,ctx,refStr,true)}]
       })
     });
     const d=await res.json();
-    iaText=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text||"").join("");
-    out.textContent=iaText||"Sin respuesta.";
-    generarProximo(txt,iaText,autoFallos);
+    if(!res.ok||d.error){
+      console.error("Anthropic API error:",res.status,d);
+      out.textContent="Error IA ("+res.status+"): "+(d.error?.message||JSON.stringify(d));
+    }else{
+      iaText=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text||"").join("");
+      out.textContent=iaText||"Sin respuesta.";
+      generarProximo(txt,iaText,autoFallos);
+    }
   }catch(e){out.textContent="Error IA: "+e.message;}
 
   btn.disabled=false;btn.textContent="🌐 + web";
@@ -1186,7 +1262,7 @@ ${ctx.estrategia?"ESTRATEGIA: "+ctx.estrategia:""}
 Respondé como si le explicaras a un colega abogado cómo abordar la cuestión, en prosa clara — NO como un escrito judicial ni asumas que hay una causa iniciada.`:`TAREA:
 1. OBSERVACIONES (2-3 líneas): qué reforzar, qué citas incorporar, qué podría ser cuestionado.
 2. VERSIÓN MEJORADA: reescribí en estilo escrito judicial argentino, listo para insertar en un escrito. Incorporá citas de jurisprudencia con tribunal. Usá lenguaje técnico preciso. Si buscaste en web, incorporá los fallos más relevantes encontrados.`;
-  return `${r.persona}${webInstr}${r.norma?"\nNormativa de referencia de esta rama: "+r.norma+".":""}
+  return `${r.persona} Respondé siempre en español (castellano rioplatense/jurídico argentino), incluso si las fuentes que encontraste en la búsqueda web están en otro idioma — nunca mezcles idiomas en la respuesta.${webInstr}${r.norma?"\nNormativa de referencia de esta rama: "+r.norma+".":""}
 ${contextoCausa}
 ${suelta?"CONSULTA":"ARGUMENTO A MEJORAR"}:
 ${txt}
@@ -1195,6 +1271,202 @@ BASE DE CONOCIMIENTO DEL ESTUDIO:
 ${refStr}
 
 ${tarea}`;
+}
+
+// ── PROMPT PARA ESCRITO DE PONENCIA (uso manual en Claude.ai) ──
+// 20/09/2026: a diferencia de doIA/doIAconWeb (pensados para mejorar un
+// argumento puntual, con max_tokens chico), esto arma un prompt largo con
+// TODA la base de referencias encontrada en SEMÁNTICAS, para pegar directo
+// en una conversación de Claude.ai y pedir un escrito de ponencia completo
+// (sin el límite de tokens de la llamada directa a la API desde acá).
+function buildRefStrCompleto(fallos){
+  const j=fallos.filter(f=>f._tipo==="juris");
+  const d=fallos.filter(f=>f._tipo==="doctrina");
+  const m=fallos.filter(f=>f._tipo==="modelo");
+  let s="";
+  if(j.length){s+="JURISPRUDENCIA:\n"+j.map(f=>{
+    const sim=f._sim?` [similitud ${Math.round(f._sim*100)}%]`:"";
+    const url=f.drive_url||f.DRIVE_URL||"";
+    return `- ${f.titulo} (${f.tribunal||""})${sim}\n  ${(f.resumen_doctrina||"").substring(0,500)}${url?"\n  Fuente: "+url:""}`;
+  }).join("\n\n");}
+  if(d.length){s+="\n\nDOCTRINA Y NORMATIVA:\n"+d.map(f=>{
+    const sim=f._sim?` [similitud ${Math.round(f._sim*100)}%]`:"";
+    const url=f.drive_url||f.DRIVE_URL||"";
+    return `- ${f.titulo} (${f.tipo||"Doctrina"})${sim}\n  ${(f.descripcion||f.contenido||"").substring(0,500)}${url?"\n  Fuente: "+url:""}`;
+  }).join("\n\n");}
+  if(m.length){s+="\n\nMODELOS DEL ESTUDIO:\n"+m.map(f=>{
+    const sim=f._sim?` [similitud ${Math.round(f._sim*100)}%]`:"";
+    const url=f.drive_url||f.DRIVE_URL||"";
+    return `- ${f.titulo} (${f.tipo_escrito||"Modelo"})${sim}\n  ${(f.descripcion||"").substring(0,500)}${url?"\n  Fuente: "+url:""}`;
+  }).join("\n\n");}
+  return s||"Sin referencias en la base de conocimiento.";
+}
+
+function buildPromptEscritoCompleto(txt,ctx,refStr){
+  const r=getRama();
+  return `${r.persona} Necesito que redactes un ESCRITO DE PONENCIA completo, en estilo judicial argentino, listo para presentar.${r.norma?" Normativa de referencia de esta rama: "+r.norma+".":""}
+
+CAUSA: ${ctx.caratula||""}
+${ctx.expte?"EXPEDIENTE: "+ctx.expte:""}
+${ctx.juzgado?"JUZGADO: "+ctx.juzgado:""}
+${ctx.codemandados?"PARTES: "+ctx.codemandados:""}
+${ctx.estrategia?"ESTRATEGIA DEFINIDA: "+ctx.estrategia:""}
+
+PUNTOS / ARGUMENTO DE PARTIDA (desarrollar y ampliar):
+${txt}
+
+BASE DE CONOCIMIENTO DEL ESTUDIO (jurisprudencia, doctrina y modelos relevantes — citalos donde corresponda con tribunal):
+${refStr}
+
+TAREA:
+Redactá el escrito de ponencia completo, con estructura formal (encabezado, hechos si corresponde, fundamentos de derecho desarrollados punto por punto, y petitorio). Usá lenguaje técnico jurídico preciso, incorporá las citas de jurisprudencia y doctrina de la base de conocimiento donde sea pertinente, y desarrollá cada punto en profundidad — no resumas, expandí la argumentación. Respondé todo en español (castellano rioplatense/jurídico argentino).`;
+}
+
+function generarPromptPonencia(){
+  const txt=document.getElementById("editor").value.trim();
+  if(!txt){alert("Escribí primero el argumento o los puntos que querés desarrollar.");return;}
+  const ctx=expActual||{caratula:"Causa no seleccionada",estrategia:"",codemandados:""};
+  const refStr=buildRefStrCompleto(autoFallos);
+  const prompt=buildPromptEscritoCompleto(txt,ctx,refStr);
+
+  document.getElementById("prompt-out").value=prompt;
+  document.getElementById("prompt-wrap").className="ia-wrap show";
+  document.getElementById("guardar-titulo").value=(ctx.caratula||"Escrito de ponencia")+" — "+new Date().toLocaleDateString("es-AR");
+  document.getElementById("prompt-out").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+// ── GENERAR ESCRITO COMPLETO DIRECTO (sin pasar por Claude.ai) ──
+// 20/09/2026: mismo prompt que generarPromptPonencia, pero se lo manda
+// directo a la API en vez de mostrarlo para copiar — un paso menos. El
+// resultado se deja en la caja de "guardar escrito final" para que se
+// revise ANTES de guardar (nunca se guarda solo, sin que un humano lo
+// haya leído — es un escrito judicial).
+async function generarEscritoCompleto(){
+  const txt=document.getElementById("editor").value.trim();
+  if(!txt){alert("Escribí primero el argumento o los puntos que querés desarrollar.");return;}
+  const ctx=expActual||{caratula:"Causa no seleccionada",estrategia:"",codemandados:""};
+  const refStr=buildRefStrCompleto(autoFallos);
+  const prompt=buildPromptEscritoCompleto(txt,ctx,refStr);
+
+  const btn=document.getElementById("btn-generar-escrito");
+  const textoOriginal=btn.textContent;
+  btn.disabled=true;btn.textContent="⚡ generando escrito completo...";
+  const contenidoEl=document.getElementById("guardar-contenido");
+  contenidoEl.value="";
+  document.getElementById("guardar-titulo").value=(ctx.caratula||"Escrito de ponencia")+" — "+new Date().toLocaleDateString("es-AR");
+
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-sonnet-5",max_tokens:8000,messages:[{role:"user",content:prompt}]})
+    });
+    const d=await res.json();
+    if(!res.ok||d.error){
+      console.error("Anthropic API error:",res.status,d);
+      alert("Error generando el escrito ("+res.status+"): "+(d.error?.message||JSON.stringify(d)));
+    }else{
+      const texto=(d.content||[]).map(b=>b.text||"").join("");
+      contenidoEl.value=texto;
+      if(!texto)alert("Claude no devolvió texto — probá de nuevo.");
+    }
+  }catch(e){
+    alert("Error de red generando el escrito: "+e.message);
+  }
+  btn.disabled=false;btn.textContent=textoOriginal;
+  contenidoEl.scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+// Copia con confirmación real: si navigator.clipboard falla (bloqueado por
+// el navegador, contexto no seguro, etc.) cae a un textarea temporal +
+// execCommand, y si ESO también falla recién ahí avisa que no copió —
+// antes el botón decía "✓ copiado" siempre, aunque no hubiera copiado nada.
+async function copiarAlPortapapeles(texto,btnEl,textoOriginal){
+  let ok=false;
+  try{
+    await navigator.clipboard.writeText(texto);
+    ok=true;
+  }catch(e){
+    try{
+      const ta=document.createElement("textarea");
+      ta.value=texto;ta.style.position="fixed";ta.style.left="-9999px";
+      document.body.appendChild(ta);ta.focus();ta.select();
+      ok=document.execCommand("copy");
+      document.body.removeChild(ta);
+    }catch(e2){ok=false;}
+  }
+  if(btnEl){
+    btnEl.textContent=ok?"✓ copiado":"✗ no copió — seleccioná y Ctrl+C";
+    setTimeout(()=>{btnEl.textContent=textoOriginal;},ok?2000:3500);
+  }
+  return ok;
+}
+
+function copyPromptPonencia(){
+  const val=document.getElementById("prompt-out").value;
+  if(!val)return;
+  copiarAlPortapapeles(val,document.getElementById("btn-copy-prompt"),"copiar");
+}
+
+function descargarPromptPonencia(){
+  const val=document.getElementById("prompt-out").value;
+  if(!val)return;
+  const ctx=expActual||{};
+  const nombre=((ctx.caratula||"prompt-ponencia").substring(0,60).replace(/[^a-zA-Z0-9 ._-]/g,"").trim().replace(/\s+/g,"_"))||"prompt-ponencia";
+  const blob=new Blob([val],{type:"text/plain;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=nombre+".txt";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ── GUARDAR ESCRITO FINAL EN DRIVE/NOTION ──
+// 20/09/2026: el Motor no puede escribir directo a Drive/Notion desde el
+// navegador (necesitaría OAuth propio) — en cambio le pide al Web App del
+// bot de Telegram (que ya tiene esos accesos) que lo guarde. Ver
+// manejarGuardarEscrito() en Code.gs. Se manda con Content-Type text/plain
+// a propósito: evita el preflight CORS que Apps Script no responde.
+async function guardarEscritoFinal(){
+  const contenido=document.getElementById("guardar-contenido").value.trim();
+  const statusEl=document.getElementById("guardar-status");
+  if(!contenido){statusEl.textContent="// pegá primero el escrito.";return;}
+  if(!SAVE_TOKEN){statusEl.textContent="// falta el token de guardado — cargalo en ⚙ config.";return;}
+  const usarDrive=document.getElementById("guardar-drive").checked;
+  const usarNotion=document.getElementById("guardar-notion").checked;
+  if(!usarDrive&&!usarNotion){statusEl.textContent="// elegí al menos un destino.";return;}
+  const destino=usarDrive&&usarNotion?"ambos":(usarNotion?"notion":"drive");
+  const ctx=expActual||{};
+  const titulo=document.getElementById("guardar-titulo").value.trim()||(ctx.caratula||"Escrito")+" — "+new Date().toLocaleDateString("es-AR");
+
+  const btn=document.getElementById("btn-guardar-escrito");
+  btn.disabled=true;btn.textContent="guardando...";
+  statusEl.textContent="// guardando...";
+
+  try{
+    const res=await fetch(APPS_SCRIPT_URL,{
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({
+        action:"guardar_escrito",token:SAVE_TOKEN,titulo,contenido,destino,
+        causa:{link_drive_carpeta:ctx.link_drive_carpeta||"",link_notion_pagina:ctx.link_notion_pagina||""}
+      })
+    });
+    const d=await res.json();
+    if(!d.ok){
+      statusEl.textContent="// error: "+(d.error||"desconocido");
+    }else{
+      let lineas=[];
+      if(d.drive_url)lineas.push(`✓ Drive: <a href="${d.drive_url}" target="_blank" style="color:var(--green)">${d.drive_url}</a>`);
+      if(d.drive_error)lineas.push(`✗ Drive: ${d.drive_error}`);
+      if(d.notion_url)lineas.push(`✓ Notion: <a href="${d.notion_url}" target="_blank" style="color:var(--green)">${d.notion_url}</a>`);
+      if(d.notion_error)lineas.push(`✗ Notion: ${d.notion_error}`);
+      statusEl.innerHTML=lineas.join("<br>")||"// listo.";
+    }
+  }catch(e){
+    statusEl.textContent="// error de red: "+e.message;
+  }
+  btn.disabled=false;btn.textContent="guardar";
 }
 
 // ── PRÓXIMO ARGUMENTO ──
@@ -1206,7 +1478,7 @@ async function generarProximo(txt,iaResult,fallos){
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
-        model:"claude-haiku-4-5",max_tokens:120,
+        model:"claude-haiku-4-5-20251001",max_tokens:120,
         messages:[{role:"user",content:`Causa: ${ctx.caratula||""}
 Argumento redactado: "${txt.substring(0,300)}"
 Fallos disponibles: ${fallos.slice(0,3).map(f=>f.titulo).join(", ")||"ninguno"}
@@ -1256,15 +1528,17 @@ function renderFallos(fallos,cid,isManual){
   }).join("");
 }
 
-function copyCita(id,text){
-  navigator.clipboard.writeText(text).catch(()=>{});
+async function copyCita(id,text){
   const b=document.getElementById("bc-"+id);
-  if(b){b.textContent="✓ copiado";b.classList.add("copied");setTimeout(()=>{b.textContent="copiar cita";b.classList.remove("copied");},2000);}
+  const ok=await copiarAlPortapapeles(text,null,"copiar cita");
+  if(b){
+    b.textContent=ok?"✓ copiado":"✗ no copió";
+    if(ok)b.classList.add("copied");
+    setTimeout(()=>{b.textContent="copiar cita";b.classList.remove("copied");},ok?2000:3500);
+  }
 }
 function copyIA(){
-  navigator.clipboard.writeText(iaText).catch(()=>{});
-  const b=document.querySelector(".btn-copy-sm");
-  if(b){b.textContent="✓ copiado";setTimeout(()=>{b.textContent="copiar";},2000);}
+  copiarAlPortapapeles(iaText,document.querySelector(".btn-copy-sm"),"copiar");
 }
 function switchTab(t){
   ["a","m","w","r"].forEach(x=>{
@@ -1299,9 +1573,9 @@ async function doRevisor(conWeb) {
       const emb = await getEmbeddingVoyage(texto.substring(0, 1500));
       if (emb) {
         const [rJ, rD, rM] = await Promise.all([
-          sbRpc("match_jurisprudencia", {query_embedding: emb, match_threshold: 0.35, match_count: 6}).catch(() => []),
-          sbRpc("match_doctrina", {query_embedding: emb, match_threshold: 0.35, match_count: 3}).catch(() => []),
-          sbRpc("match_modelos", {query_embedding: emb, match_threshold: 0.35, match_count: 3}).catch(() => [])
+          sbRpc("match_jurisprudencia", {query_embedding: emb, match_threshold: 0.35, match_count: 6}).catch(e => {console.error("match_jurisprudencia error:",e); return [];}),
+          sbRpc("match_doctrina", {query_embedding: emb, match_threshold: 0.35, match_count: 3}).catch(e => {console.error("match_doctrina error:",e); return [];}),
+          sbRpc("match_modelos", {query_embedding: emb, match_threshold: 0.35, match_count: 3}).catch(e => {console.error("match_modelos error:",e); return [];})
         ]);
         fallosLocales = [
           ...rJ.map(f => ({...f, _tipo:"juris", _sim:f.similarity})),
@@ -1382,7 +1656,7 @@ Analizá el texto como si fueras un revisor externo del escrito. Respondé EXACT
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-      body: JSON.stringify({model:"claude-sonnet-4-20250514", max_tokens:2000, messages:[{role:"user",content:prompt}]})
+      body: JSON.stringify({model:"claude-sonnet-5", max_tokens:2000, messages:[{role:"user",content:prompt}]})
     });
     const data = await res.json();
     const txt = (data.content||[]).map(b=>b.text||"").join("");
@@ -1496,9 +1770,9 @@ async function buscarWebParaRevisor(texto) {
       method: "POST",
       headers: {"Content-Type":"application/json","x-api-key":ANT_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body: JSON.stringify({
-        model:"claude-haiku-4-5", max_tokens:800,
+        model:"claude-haiku-4-5-20251001", max_tokens:800,
         tools:[{type:"web_search_20250305",name:"web_search"}],
-        messages:[{role:"user",content:`Buscá jurisprudencia argentina de ${getRama().label.toLowerCase()} sobre: "${temas}"\nBuscá en ${getRama().tribunales}.\nDevolvé JSON:\n{"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis","url":"url"}]}`}]
+        messages:[{role:"user",content:`Buscá jurisprudencia argentina de ${getRama().label.toLowerCase()} sobre: "${temas}"\nBuscá en ${getRama().tribunales}.\nRespondé siempre en español (castellano rioplatense/jurídico argentino), aunque las fuentes que encuentres estén en otro idioma.\nDevolvé JSON:\n{"resultados":[{"titulo":"fallo","tribunal":"tribunal","holding":"síntesis","url":"url"}]}`}]
       })
     });
     const data = await res.json();
@@ -1544,6 +1818,8 @@ ed.addEventListener("input",function(){
   document.getElementById("chars").textContent=txt.length+" chars";
   document.getElementById("btn-ia").disabled=txt.trim().length<20;
   document.getElementById("btn-web-arg").disabled=txt.trim().length<20;
+  document.getElementById("btn-prompt-ponencia").disabled=txt.trim().length<20;
+  document.getElementById("btn-generar-escrito").disabled=txt.trim().length<20;
   if(timer)clearTimeout(timer);
   if(txt.trim().length>=40){
     timer=setTimeout(()=>autoSearch(txt),1800);
