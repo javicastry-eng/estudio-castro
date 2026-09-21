@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nota — Solicitud de Ampliación de Rubro al Locador — Estudio Castro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;min-height:100vh;padding:20px}
+.container{max-width:960px;margin:0 auto}
+
+.app-header{background:#1a1a2e;color:#fff;padding:16px 24px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.app-header h1{font-size:16px;font-weight:500;letter-spacing:.02em}
+.app-header .sub{font-size:12px;color:#aaa;margin-top:2px}
+.logo-text{font-size:13px;font-weight:700;letter-spacing:.1em;color:#7c9fc9}
+
+.aviso{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:14px;display:flex;gap:8px;line-height:1.5}
+.aviso-azul{background:#eaf2fb;border:1px solid #b5d4f4;color:#1a4a6e}
+
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.card h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #f0f0f0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:8px}
+.field label{font-size:11px;color:#666;display:block;margin-bottom:3px;font-weight:500}
+.field input,.field textarea{width:100%;font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid #d0d0d0;background:#fafafa;color:#222;font-family:inherit;transition:border-color .15s}
+.field input:focus,.field textarea:focus{outline:none;border-color:#2c5f8a;background:#fff}
+.field textarea{min-height:56px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 110px;gap:8px}
+
+.texto-resultado{background:#fafaf8;border:1px solid #e0ddd5;border-radius:8px;padding:20px 22px;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.75;white-space:pre-wrap;min-height:200px;color:#222;margin-bottom:10px}
+
+.btns-row{display:grid;gap:10px;margin-bottom:20px}
+.btns-3{grid-template-columns:1fr 1fr 1fr}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;border-radius:8px;border:1.5px solid #d0d0d0;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:#333;font-family:inherit;transition:all .15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.btn-primary{background:#2c5f8a;border-color:#2c5f8a;color:#fff}
+.btn-primary:hover{background:#1f4a6e}
+.btn-red{border-color:#e0a0a0}
+.btn-red:hover{background:#fff8f8;border-color:#c04040;color:#c04040}
+
+@media print{
+  body{background:#fff;margin:0;padding:0}
+  .app-header,.aviso,.card,.btns-row{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="app-header">
+    <div>
+      <h1>Nota — Solicitud de Ampliación de Rubro/Destino al Locador</h1>
+      <div class="sub">Estudio Castro — Dr. Javier Horacio Castro — T° 102 F° 174 CPACF</div>
+    </div>
+    <div class="logo-text">ESTUDIO CASTRO</div>
+  </div>
+
+  <div class="aviso aviso-azul">ℹ️ <div>Se usa <strong>antes</strong> de poner en marcha la actividad de streaming: pide al locador autorización por escrito para ampliar el destino/rubro habilitado del local, dejando aclarado que no implica ceder el inmueble a terceros ni subalquilarlo. Conseguida esa autorización, recién ahí conviene activar el "Convenio de Colaboración — Ampliación de Rubro". Si el contrato de locación exige una vía formal específica (carta documento, notificación fehaciente), usá ese canal para enviar este mismo texto.</div></div>
+
+  <div class="card">
+    <h3>Locador (destinatario)</h3>
+    <div class="field"><label>Apellido y nombre / razón social</label><input id="l-nombre" type="text" placeholder="Nombre del locador" oninput="actualizar()"/></div>
+    <div class="field"><label>Domicilio</label><input id="l-dom" type="text" placeholder="Calle y número, localidad" oninput="actualizar()"/></div>
+  </div>
+
+  <div class="card">
+    <h3>Locataria (remitente — NONI-NONI)</h3>
+    <div class="field"><label>Apellido y nombre / razón social</label><input id="t-nombre" type="text" placeholder="Titular de NONI-NONI" oninput="actualizar()"/></div>
+    <div class="field field-row">
+      <div><label>DNI / CUIT</label><input id="t-doc" type="text" placeholder="DNI o CUIT" oninput="actualizar()"/></div>
+      <div><label>Nombre de fantasía</label><input id="t-fantasia" type="text" value="NONI-NONI" oninput="actualizar()"/></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Datos del contrato de locación</h3>
+    <div class="grid2">
+      <div class="field"><label>Dirección del inmueble locado</label><input id="inmueble" type="text" placeholder="Calle y número, localidad" oninput="actualizar()"/></div>
+      <div class="field"><label>Fecha de celebración del contrato</label><input type="date" id="fecha-contrato" onchange="actualizar()"/></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Destino/rubro actualmente habilitado</label><input id="destino-actual" type="text" value="venta de colchones" oninput="actualizar()"/></div>
+      <div class="field"><label>N° de cláusula que prohíbe subalquiler/cesión (si lo sabés)</label><input id="clausula-prohibicion" type="text" placeholder="Ej.: Cláusula Octava" oninput="actualizar()"/></div>
+    </div>
+    <div class="field"><label>Actividad que se solicita incorporar</label>
+      <textarea id="nueva-actividad" oninput="actualizar()">producción y exhibición de contenido audiovisual (streaming), como actividad complementaria a la venta de colchones</textarea>
+    </div>
+    <div class="field"><label>Justificación / contexto (opcional, se agrega al texto)</label>
+      <textarea id="justificacion" oninput="actualizar()">Esta ampliación de rubro tiene como finalidad generar ingresos adicionales que contribuyan a sostener en tiempo y forma el cumplimiento de las obligaciones emergentes del contrato de locación, incluido el pago puntual del canon locativo.</textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Otros datos</h3>
+    <div class="grid2">
+      <div class="field"><label>Lugar</label><input id="lugar" type="text" placeholder="Ciudad" oninput="actualizar()"/></div>
+      <div class="field"><label>Fecha de la nota</label><input type="date" id="fecha" onchange="actualizar()"/></div>
+    </div>
+    <div class="field"><label>Plazo solicitado para respuesta (días)</label><input id="plazo" type="number" value="10" oninput="actualizar()"/></div>
+  </div>
+
+  <div class="card">
+    <h3>Texto de la nota — listo para copiar</h3>
+    <div class="texto-resultado" id="texto-resultado">Completá los datos arriba para ver el texto...</div>
+  </div>
+
+  <div class="btns-row btns-3">
+    <button class="btn btn-primary" onclick="copiarTexto()">📋 Copiar texto</button>
+    <button class="btn" onclick="window.print()">🖨️ Imprimir / PDF</button>
+    <button class="btn btn-red" onclick="limpiarTodo()">🗑 Limpiar formulario</button>
+  </div>
+
+</div>
+
+<script>
+function gv(id){ return document.getElementById(id).value || ''; }
+
+function getFecha(id){
+  const f = gv(id);
+  if (!f) return '[FECHA]';
+  return new Date(f + 'T12:00:00').toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' });
+}
+
+function actualizar(){
+  const lNombre = gv('l-nombre') || '[NOMBRE DEL LOCADOR]';
+  const lDom = gv('l-dom') || '[domicilio del locador]';
+
+  const tNombre = gv('t-nombre') || '[NOMBRE TITULAR]';
+  const tDoc = gv('t-doc') || '[DNI/CUIT]';
+  const tFantasia = gv('t-fantasia') || 'NONI-NONI';
+
+  const inmueble = gv('inmueble') || '[dirección del inmueble]';
+  const fechaContrato = getFecha('fecha-contrato');
+  const destinoActual = gv('destino-actual') || '[destino actualmente habilitado]';
+  const clausulaProhibicion = gv('clausula-prohibicion');
+  const nuevaActividad = gv('nueva-actividad') || '[actividad a incorporar]';
+  const justificacion = gv('justificacion');
+
+  const lugar = gv('lugar') || '[LUGAR]';
+  const fecha = getFecha('fecha');
+  const plazo = gv('plazo') || '10';
+
+  const clausulaTexto = clausulaProhibicion
+    ? ` (${clausulaProhibicion} del contrato)`
+    : '';
+
+  const texto =
+`NOTA DE SOLICITUD — AMPLIACIÓN DE DESTINO/RUBRO HABILITADO
+
+${lugar}, ${fecha}
+
+Señor/a:
+${lNombre}
+${lDom}
+
+De mi consideración:
+
+Me dirijo a Ud. en mi carácter de locataria del inmueble sito en ${inmueble}, en virtud del contrato de locación celebrado con fecha ${fechaContrato} (en adelante, el "CONTRATO"), cuyo destino actualmente habilitado es ${destinoActual}, explotado bajo el nombre de fantasía "${tFantasia}".
+
+Por medio de la presente, solicito a Ud. su autorización expresa y por escrito para ampliar el destino/rubro habilitado en el CONTRATO, incorporando la siguiente actividad: ${nuevaActividad}.
+
+Dejo expresamente aclarado que dicha actividad se desarrollará dentro del propio giro comercial de mi parte, sin que ello implique ceder la tenencia, el uso ni el goce del inmueble —total ni parcialmente— a terceros, ni configure sublocación, cesión de la locación ni ningún otro acto prohibido por el CONTRATO${clausulaTexto}.${justificacion ? '\n\n' + justificacion : ''}
+
+Quedo a su disposición para suscribir, de así considerarlo Ud. conveniente, una adenda o addendum al CONTRATO que instrumente esta ampliación de destino, y para brindarle cualquier información adicional que estime necesaria a tal fin.
+
+Le solicito tenga a bien expedirse dentro de un plazo de ${plazo} días desde la recepción de la presente.
+
+Sin otro particular, la/lo saludo atentamente.
+
+
+_________________________
+${tNombre}
+DNI/CUIT N° ${tDoc}
+Locataria`;
+
+  document.getElementById('texto-resultado').textContent = texto;
+}
+
+function copiarTexto(){
+  const txt = document.getElementById('texto-resultado').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    alert('✅ Texto copiado. Podés pegarlo donde necesites.');
+  }).catch(() => {
+    alert('Seleccioná el texto manualmente y copiá con Ctrl+C');
+  });
+}
+
+function limpiarTodo(){
+  if (!confirm('¿Limpiar todos los datos del formulario?')) return;
+  ['l-nombre','l-dom','t-nombre','t-doc','inmueble','clausula-prohibicion','lugar'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('t-fantasia').value = 'NONI-NONI';
+  document.getElementById('destino-actual').value = 'venta de colchones';
+  document.getElementById('nueva-actividad').value = '';
+  document.getElementById('justificacion').value = '';
+  document.getElementById('plazo').value = '10';
+  document.getElementById('fecha-contrato').value = '';
+  document.getElementById('fecha').value = '';
+  actualizar();
+}
+
+document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+actualizar();
+</script>
+
+</body>
+</html>
