@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convenio de Uso de Espacio (Streaming) — Estudio Castro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;min-height:100vh;padding:20px}
+.container{max-width:960px;margin:0 auto}
+
+.app-header{background:#1a1a2e;color:#fff;padding:16px 24px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.app-header h1{font-size:16px;font-weight:500;letter-spacing:.02em}
+.app-header .sub{font-size:12px;color:#aaa;margin-top:2px}
+.logo-text{font-size:13px;font-weight:700;letter-spacing:.1em;color:#7c9fc9}
+
+.aviso{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:14px;display:flex;gap:8px;line-height:1.5}
+.aviso-azul{background:#eaf2fb;border:1px solid #b5d4f4;color:#1a4a6e}
+.aviso-naranja{background:#fff8e6;border:1px solid #f0c060;color:#7a5500}
+
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.card h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #f0f0f0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:8px}
+.field label{font-size:11px;color:#666;display:block;margin-bottom:3px;font-weight:500}
+.field input,.field select,.field textarea{width:100%;font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid #d0d0d0;background:#fafafa;color:#222;font-family:inherit;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#2c5f8a;background:#fff}
+.field textarea{min-height:56px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 110px;gap:8px}
+.field-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{font-size:11px;padding:5px 12px;border-radius:20px;border:1.5px solid #d0d0d0;background:#f8f8f8;cursor:pointer;color:#555;font-family:inherit;transition:all .15s}
+.chip:hover{border-color:#2c5f8a;color:#2c5f8a}
+.chip.active{background:#2c5f8a;border-color:#2c5f8a;color:#fff;font-weight:600}
+.chip .n{opacity:.6;margin-right:4px}
+
+.texto-resultado{background:#fafaf8;border:1px solid #e0ddd5;border-radius:8px;padding:20px 22px;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.75;white-space:pre-wrap;min-height:200px;color:#222;margin-bottom:10px}
+.texto-resultado b{font-weight:700}
+
+.btns-row{display:grid;gap:10px;margin-bottom:20px}
+.btns-3{grid-template-columns:1fr 1fr 1fr}
+.btns-2{grid-template-columns:1fr 1fr}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;border-radius:8px;border:1.5px solid #d0d0d0;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:#333;font-family:inherit;transition:all .15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.btn-primary{background:#2c5f8a;border-color:#2c5f8a;color:#fff}
+.btn-primary:hover{background:#1f4a6e}
+.btn-red{border-color:#e0a0a0}
+.btn-red:hover{background:#fff8f8;border-color:#c04040;color:#c04040}
+
+@media print{
+  body{background:#fff;margin:0;padding:0}
+  .container>*{display:none!important}
+  .container>.print-only{display:block!important}
+}
+.print-only{display:none}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="app-header">
+    <div>
+      <h1>Convenio de Cesión de Uso de Espacio — Fines de Streaming</h1>
+      <div class="sub">Estudio Castro — Dr. Javier Horacio Castro — T° 102 F° 174 CPACF</div>
+    </div>
+    <div class="logo-text">ESTUDIO CASTRO</div>
+  </div>
+
+  <div class="aviso aviso-azul">ℹ️ <div>Instrumento pensado para el caso de un local comercial que cede el uso de un espacio (ej. planta alta) a un tercero, quien afronta a su cargo pintura, mejoras y amoblamiento sin inversión del cedente, pagando la contraprestación en publicidad. Incluye cláusulas de protección frente a reclamos por mejoras, abandono y habilitaciones. Completá los datos y revisá/ajustá el texto antes de firmar — es un modelo, no un dictamen sobre el caso concreto.</div></div>
+
+  <!-- DATOS -->
+  <div class="grid2">
+    <div class="card">
+      <h3>Parte cedente — titular del local</h3>
+      <div class="field"><label>Apellido y nombre / razón social</label><input id="a-nombre" type="text" placeholder="Titular de NONI-NONI" oninput="actualizar()"/></div>
+      <div class="field field-row">
+        <div><label>DNI / CUIT</label><input id="a-doc" type="text" placeholder="DNI o CUIT" oninput="actualizar()"/></div>
+        <div><label>Nombre de fantasía</label><input id="a-fantasia" type="text" value="NONI-NONI" oninput="actualizar()"/></div>
+      </div>
+      <div class="field"><label>Domicilio del titular</label><input id="a-dom" type="text" placeholder="Calle y número, localidad" oninput="actualizar()"/></div>
+      <div class="field"><label>Dirección del local (donde está EL ESPACIO)</label><input id="a-local" type="text" placeholder="Calle y número, localidad" oninput="actualizar()"/></div>
+    </div>
+    <div class="card">
+      <h3>Parte cesionaria — proyecto de streaming</h3>
+      <div class="field"><label>Apellido y nombre / razón social</label><input id="b-nombre" type="text" placeholder="Nombre de la otra parte" oninput="actualizar()"/></div>
+      <div class="field"><label>DNI / CUIT</label><input id="b-doc" type="text" placeholder="DNI o CUIT" oninput="actualizar()"/></div>
+      <div class="field"><label>Domicilio</label><input id="b-dom" type="text" placeholder="Calle y número, localidad" oninput="actualizar()"/></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Datos del convenio</h3>
+    <div class="grid2">
+      <div class="field"><label>Lugar de celebración</label><input id="lugar" type="text" placeholder="Ciudad" oninput="actualizar()"/></div>
+      <div class="field"><label>Fecha</label><input type="date" id="fecha" onchange="actualizar()"/></div>
+    </div>
+    <div class="field"><label>Contraprestación en publicidad (detalle: menciones, cantidad, periodicidad, formato)</label>
+      <textarea id="publicidad" oninput="actualizar()" placeholder="Ej.: mención de la marca NONI-NONI al inicio y cierre de cada transmisión, banner visible en cámara, publicación mensual en redes del proyecto, etc.">mención de la marca NONI-NONI al inicio y cierre de cada transmisión, exhibición de un banner/cartel de la marca dentro del espacio de streaming en cámara, y una publicación mensual en las redes sociales del proyecto</textarea>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Preaviso para rescindir sin causa (días corridos)</label><input id="preaviso" type="number" value="30" oninput="actualizar()"/></div>
+      <div class="field"><label>Plazo para retirar bienes tras intimación por abandono (días)</label><input id="retiro" type="number" value="10" oninput="actualizar()"/></div>
+    </div>
+    <div class="field"><label>Jurisdicción (Tribunales Ordinarios de...)</label><input id="jurisdiccion" type="text" placeholder="Ciudad / Departamento Judicial" oninput="actualizar()"/></div>
+  </div>
+
+  <div class="card">
+    <h3>Texto del convenio — listo para copiar</h3>
+    <div class="texto-resultado" id="texto-resultado">Completá los datos arriba para ver el texto...</div>
+  </div>
+
+  <div class="btns-row btns-3">
+    <button class="btn btn-primary" onclick="copiarTexto()">📋 Copiar texto</button>
+    <button class="btn" onclick="window.print()">🖨️ Imprimir / PDF</button>
+    <button class="btn btn-red" onclick="limpiarTodo()">🗑 Limpiar formulario</button>
+  </div>
+
+</div><!-- fin container -->
+
+<script>
+function gv(id){ return document.getElementById(id).value || ''; }
+
+function getFecha(){
+  const f = gv('fecha');
+  if (!f) return '[FECHA]';
+  return new Date(f + 'T12:00:00').toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' });
+}
+
+function actualizar(){
+  const aNombre = gv('a-nombre') || '[NOMBRE TITULAR]';
+  const aDoc = gv('a-doc') || '[DNI/CUIT]';
+  const aFantasia = gv('a-fantasia') || 'NONI-NONI';
+  const aDom = gv('a-dom') || '[domicilio del titular]';
+  const aLocal = gv('a-local') || '[dirección del local]';
+
+  const bNombre = gv('b-nombre') || '[NOMBRE OTRA PARTE]';
+  const bDoc = gv('b-doc') || '[DNI/CUIT]';
+  const bDom = gv('b-dom') || '[domicilio]';
+
+  const lugar = gv('lugar') || '[LUGAR]';
+  const fecha = getFecha();
+  const publicidad = gv('publicidad') || '[detalle de la publicidad a otorgar]';
+  const preaviso = gv('preaviso') || '30';
+  const retiro = gv('retiro') || '10';
+  const jurisdiccion = gv('jurisdiccion') || '[jurisdicción]';
+
+  const texto =
+`CONVENIO DE CESIÓN DE USO PRECARIO Y ONEROSO DE ESPACIO
+(EN ESPECIE — CONTRAPRESTACIÓN PUBLICITARIA)
+
+En ${lugar}, a ${fecha}, entre:
+
+POR UNA PARTE: ${aNombre}, DNI/CUIT N° ${aDoc}, con domicilio en ${aDom}, en su carácter de titular del fondo de comercio "${aFantasia}" (venta de colchones), sito en ${aLocal} (en adelante, "EL CEDENTE"); y
+
+POR LA OTRA PARTE: ${bNombre}, DNI/CUIT N° ${bDoc}, con domicilio en ${bDom} (en adelante, "EL PROYECTO"),
+
+en conjunto "LAS PARTES", quienes acuerdan celebrar el presente convenio (en adelante, el "CONVENIO"), sujeto a las siguientes cláusulas:
+
+PRIMERA — OBJETO.
+EL CEDENTE cede a favor de EL PROYECTO, a título precario y revocable, el uso y goce de un espacio ubicado en la planta alta del local sito en ${aLocal} (en adelante, "EL ESPACIO"), destinado exclusivamente a la producción de contenido audiovisual y transmisiones de streaming, quedando prohibido cualquier otro destino sin autorización previa y por escrito de EL CEDENTE.
+
+SEGUNDA — NATURALEZA DEL VÍNCULO.
+Las partes dejan expresa constancia de que el presente CONVENIO no constituye un contrato de locación en los términos de la Ley 23.091 ni del Código Civil y Comercial de la Nación, ni confiere a EL PROYECTO derecho de tenencia, posesión, estabilidad locativa, ni ningún otro derecho real o personal sobre EL ESPACIO más allá de lo aquí pactado. Tampoco constituye la constitución de una sociedad de hecho, irregular, civil ni comercial entre las partes, ni genera relación de dependencia laboral, comunidad de bienes ni ningún otro vínculo asociativo. El vínculo se limita estrictamente a lo aquí convenido.
+
+TERCERA — CONTRAPRESTACIÓN.
+Como única contraprestación por el uso de EL ESPACIO, EL PROYECTO se obliga a otorgar a EL CEDENTE: ${publicidad}. No existe pago de suma de dinero alguna en concepto de canon, alquiler, arriendo ni similar.
+
+CUARTA — PINTURA, MEJORAS, MOBILIARIO Y ACONDICIONAMIENTO.
+4.1. Todos los trabajos de pintura, refacción, acondicionamiento, decoración, instalación de mobiliario y equipamiento técnico, y cualquier otra mejora que EL PROYECTO decida realizar en EL ESPACIO (en adelante, las "MEJORAS") serán ejecutados exclusivamente por cuenta, cargo, costo y riesgo de EL PROYECTO, sin que EL CEDENTE deba efectuar erogación, inversión ni desembolso alguno.
+4.2. EL CEDENTE no será responsable por la calidad, idoneidad, seguridad ni legalidad de los trabajos realizados por EL PROYECTO o por terceros que este contrate, siendo EL PROYECTO el único responsable frente a dichos terceros y frente a cualquier organismo público o privado.
+4.3. Las MEJORAS que se incorporen a EL ESPACIO quedarán, en caso de rescisión, resolución, finalización o abandono del presente CONVENIO por cualquier causa, a beneficio del inmueble, sin que EL PROYECTO tenga derecho a reclamar a EL CEDENTE compensación, indemnización, reintegro ni pago alguno en concepto de mejoras útiles, necesarias, voluntarias ni de ningún otro tipo (arg. arts. 1934, 1938 y concordantes del Código Civil y Comercial de la Nación), renunciando EL PROYECTO expresa e irrevocablemente a todo derecho de retención sobre EL ESPACIO y a todo reclamo por mayor valor, plusvalía o enriquecimiento derivado de las MEJORAS.
+4.4. Si EL CEDENTE exigiera la restitución de EL ESPACIO en su estado original, EL PROYECTO afrontará por su exclusiva cuenta los costos de remoción y restitución, dentro del plazo que se le indique a tal efecto.
+
+QUINTA — RESCISIÓN, ABANDONO O INCUMPLIMIENTO.
+5.1. Cualquiera de las partes podrá rescindir el presente CONVENIO sin expresión de causa, mediante notificación fehaciente cursada a la otra con una antelación mínima de ${preaviso} días corridos.
+5.2. En caso de abandono, cese de actividad, desocupación de hecho o incumplimiento de EL PROYECTO, EL PROYECTO no tendrá derecho a reclamo, indemnización ni compensación alguna por las MEJORAS realizadas, publicidad no devengada, lucro cesante, pérdida de chance ni ningún otro concepto, sin perjuicio de las acciones que pudieran corresponder a EL CEDENTE.
+5.3. Ante el abandono o incumplimiento grave de EL PROYECTO, EL CEDENTE podrá retomar la posesión de EL ESPACIO, previa intimación fehaciente a EL PROYECTO para que retire los bienes muebles y elementos allí existentes en el plazo de ${retiro} días; transcurrido dicho plazo sin que se proceda al retiro, EL CEDENTE quedará facultado a disponer de ellos del modo que estime conveniente, sin responsabilidad de su parte.
+
+SEXTA — HABILITACIONES, PERMISOS Y CUMPLIMIENTO NORMATIVO.
+6.1. Será exclusiva responsabilidad de EL PROYECTO la obtención, tramitación, vigencia y costo de toda habilitación, permiso, inscripción o autorización municipal, provincial, nacional o de cualquier organismo de contralor necesaria para el desarrollo de la actividad de streaming/producción de contenido en EL ESPACIO, así como el cumplimiento de toda normativa de seguridad e higiene, bromatología (si correspondiere), propiedad intelectual, derechos de autor y de imagen, protección de datos personales y toda otra normativa aplicable a su actividad.
+6.2. EL CEDENTE no garantiza la aptitud de EL ESPACIO para la actividad de EL PROYECTO, siendo carga de este último verificar previamente dicha aptitud y las condiciones edilicias, de zonificación y habilitación del inmueble.
+6.3. EL PROYECTO mantendrá indemne a EL CEDENTE frente a toda multa, sanción, clausura o reclamo administrativo o judicial originado en la falta de habilitación, permiso o incumplimiento normativo relacionado con la actividad que EL PROYECTO desarrolle en EL ESPACIO.
+
+SÉPTIMA — INDEMNIDAD Y RESPONSABILIDAD FRENTE A TERCEROS.
+EL PROYECTO se obliga a mantener indemne a EL CEDENTE de todo reclamo, demanda o acción administrativa, judicial o extrajudicial que terceros —incluyendo, sin limitación, empleados, colaboradores, invitados, proveedores u organismos de contralor— pudieran iniciar contra EL CEDENTE con motivo o en ocasión de la actividad desarrollada por EL PROYECTO en EL ESPACIO, obligándose a contratar y mantener vigente, a su exclusivo cargo, un seguro de responsabilidad civil que cubra dichas contingencias, cuya póliza deberá exhibir a requerimiento de EL CEDENTE.
+
+OCTAVA — AUSENCIA DE RELACIÓN LABORAL.
+El personal, colaboradores o terceros que EL PROYECTO afecte a la actividad en EL ESPACIO no tendrán vínculo laboral, de dependencia ni de ningún otro tipo con EL CEDENTE, siendo EL PROYECTO el único empleador y responsable de las obligaciones laborales, previsionales, sindicales, de ART y fiscales correspondientes, manteniendo indemne a EL CEDENTE por cualquier reclamo derivado de dicha relación.
+
+NOVENA — SEGUROS.
+EL PROYECTO deberá contratar y mantener vigente, durante toda la vigencia del CONVENIO, seguro de responsabilidad civil y, en la medida en que su actividad pudiera generar dicho riesgo, cobertura contra incendio y demás riesgos que afecten EL ESPACIO y/o el resto del inmueble, incluido el local comercial de EL CEDENTE.
+
+DÉCIMA — DOMICILIOS Y JURISDICCIÓN.
+Las partes constituyen domicilio en los indicados en el encabezamiento, donde se tendrán por válidas todas las notificaciones, y se someten a la jurisdicción de los Tribunales Ordinarios de ${jurisdiccion}, con renuncia a cualquier otro fuero que pudiera corresponderles.
+
+En prueba de conformidad, se firman dos ejemplares de un mismo tenor y a un solo efecto, en el lugar y fecha indicados en el encabezamiento.
+
+
+_________________________                    _________________________
+${aNombre}                                    ${bNombre}
+EL CEDENTE                                    EL PROYECTO`;
+
+  document.getElementById('texto-resultado').textContent = texto;
+}
+
+function copiarTexto(){
+  const txt = document.getElementById('texto-resultado').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    alert('✅ Texto copiado. Podés pegarlo donde necesites.');
+  }).catch(() => {
+    alert('Seleccioná el texto manualmente y copiá con Ctrl+C');
+  });
+}
+
+function limpiarTodo(){
+  if (!confirm('¿Limpiar todos los datos del formulario?')) return;
+  ['a-nombre','a-doc','a-dom','a-local','b-nombre','b-doc','b-dom','lugar','jurisdiccion'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('a-fantasia').value = 'NONI-NONI';
+  document.getElementById('publicidad').value = '';
+  document.getElementById('preaviso').value = '30';
+  document.getElementById('retiro').value = '10';
+  document.getElementById('fecha').value = '';
+  actualizar();
+}
+
+document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+actualizar();
+</script>
+
+</body>
+</html>
