@@ -56,7 +56,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;min-height:100vh
     <div class="logo-text">ESTUDIO CASTRO</div>
   </div>
 
-  <div class="aviso aviso-azul">ℹ️ <div>Se usa <strong>antes</strong> de poner en marcha la actividad de streaming: pide al locador autorización por escrito para ampliar el destino/rubro habilitado del local, dejando aclarado que no implica ceder el inmueble a terceros ni subalquilarlo. Conseguida esa autorización, recién ahí conviene activar el "Convenio de Colaboración — Ampliación de Rubro". Incluye al pie un bloque de <strong>conformidad para que el locador firme</strong>: si está de acuerdo, alcanza con que devuelva esta misma nota firmada — eso ya es la autorización expresa y por escrito que hace falta.</div></div>
+  <div class="aviso aviso-azul">ℹ️ <div>Se usa <strong>antes</strong> de poner en marcha la actividad de streaming: pide al locador autorización por escrito para ampliar los rubros habilitados del local —sin cambiar el destino comercial ya pactado—, dejando aclarado que no implica ceder el inmueble a terceros ni subalquilarlo. Conseguida esa autorización, recién ahí conviene activar el "Convenio de Colaboración — Ampliación de Rubro". Incluye al pie un bloque de <strong>conformidad para que el locador firme</strong>: si está de acuerdo, alcanza con que devuelva esta misma nota firmada — eso ya es la autorización expresa y por escrito que hace falta.</div></div>
 
   <div class="aviso aviso-azul">📌 <div><strong>Orden recomendado:</strong> (1) entregar/enviar esta nota como carta simple o email, pidiendo la firma de conformidad al pie; (2) si no hay respuesta dentro del plazo o el locador se muestra reticente, recién ahí escalar a carta documento — pero incluso la CD solo deja constancia de que se pidió la autorización, no la reemplaza. El silencio del locador nunca equivale a autorización (art. 979 CCCN): sin conformidad firmada o respuesta expresa, no avancés con la actividad de streaming.</div></div>
 
@@ -82,7 +82,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;min-height:100vh
       <div class="field"><label>Fecha de celebración del contrato</label><input type="date" id="fecha-contrato" onchange="actualizar()"/></div>
     </div>
     <div class="grid2">
-      <div class="field"><label>Destino/rubro actualmente habilitado</label><input id="destino-actual" type="text" value="venta de colchones" oninput="actualizar()"/></div>
+      <div class="field"><label>Rubro actualmente habilitado (dentro del destino comercial)</label><input id="destino-actual" type="text" value="venta de colchones" oninput="actualizar()"/></div>
       <div class="field"><label>N° de cláusula que prohíbe subalquiler/cesión (si lo sabés)</label><input id="clausula-prohibicion" type="text" placeholder="Ej.: Cláusula Octava" oninput="actualizar()"/></div>
     </div>
     <div class="field"><label>Actividad que se solicita incorporar</label>
@@ -158,13 +158,13 @@ ${lDom}
 
 De mi consideración:
 
-Me dirijo a Ud. en mi carácter de locataria del inmueble sito en ${inmueble}, en virtud del contrato de locación celebrado con fecha ${fechaContrato} (en adelante, el "CONTRATO"), cuyo destino actualmente habilitado es ${destinoActual}, explotado bajo el nombre de fantasía "${tFantasia}".
+Me dirijo a Ud. en mi carácter de locataria del inmueble sito en ${inmueble}, en virtud del contrato de locación celebrado con fecha ${fechaContrato} (en adelante, el "CONTRATO"), cuyo destino comercial habilita actualmente el rubro de ${destinoActual}, explotado bajo el nombre de fantasía "${tFantasia}".
 
-Por medio de la presente, solicito a Ud. su autorización expresa y por escrito para ampliar el destino/rubro habilitado en el CONTRATO, incorporando la siguiente actividad: ${nuevaActividad}.
+Por medio de la presente, solicito a Ud. su autorización expresa y por escrito para ampliar los rubros habilitados en el CONTRATO —sin que ello implique cambio alguno del destino comercial ya pactado—, incorporando la siguiente actividad: ${nuevaActividad}.
 
 Dejo expresamente aclarado que dicha actividad se desarrollará dentro del propio giro comercial de mi parte, sin que ello implique ceder la tenencia, el uso ni el goce del inmueble —total ni parcialmente— a terceros, ni configure sublocación, cesión de la locación ni ningún otro acto prohibido por el CONTRATO${clausulaTexto}.${justificacion ? '\n\n' + justificacion : ''}
 
-Quedo a su disposición para suscribir, de así considerarlo Ud. conveniente, una adenda o addendum al CONTRATO que instrumente esta ampliación de destino, y para brindarle cualquier información adicional que estime necesaria a tal fin.
+Quedo a su disposición para suscribir, de así considerarlo Ud. conveniente, una adenda o addendum al CONTRATO que instrumente esta ampliación de rubro, y para brindarle cualquier información adicional que estime necesaria a tal fin.
 
 Le solicito tenga a bien expedirse por escrito dentro de un plazo de ${plazo} días desde la recepción de la presente, dejando aclarado que el silencio no será interpretado como autorización.
 
@@ -181,7 +181,7 @@ Locataria
 
 CONFORMIDAD DEL LOCADOR
 
-Quien suscribe, ${lNombre}, en su carácter de locador/a del inmueble sito en ${inmueble}, PRESTA CONFORMIDAD con la ampliación de destino/rubro solicitada en la presente, autorizando expresamente a la locataria a destinar el inmueble también a la actividad indicada en el segundo párrafo, sin que ello implique modificación de ninguna otra cláusula del CONTRATO ni renuncia a derecho alguno no expresamente aquí contemplado.
+Quien suscribe, ${lNombre}, en su carácter de locador/a del inmueble sito en ${inmueble}, PRESTA CONFORMIDAD con la ampliación de rubro solicitada en la presente, autorizando expresamente a la locataria a ejercer también la actividad indicada en el segundo párrafo, sin que ello implique cambio del destino comercial ya pactado ni modificación de ninguna otra cláusula del CONTRATO ni renuncia a derecho alguno no expresamente aquí contemplado.
 
 Lugar y fecha: _________________________
 
