@@ -56,7 +56,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;min-height:100vh
     <div class="logo-text">ESTUDIO CASTRO</div>
   </div>
 
-  <div class="aviso aviso-azul">ℹ️ <div>Se usa <strong>antes</strong> de poner en marcha la actividad de streaming: pide al locador autorización por escrito para ampliar el destino/rubro habilitado del local, dejando aclarado que no implica ceder el inmueble a terceros ni subalquilarlo. Conseguida esa autorización, recién ahí conviene activar el "Convenio de Colaboración — Ampliación de Rubro". Si el contrato de locación exige una vía formal específica (carta documento, notificación fehaciente), usá ese canal para enviar este mismo texto.</div></div>
+  <div class="aviso aviso-azul">ℹ️ <div>Se usa <strong>antes</strong> de poner en marcha la actividad de streaming: pide al locador autorización por escrito para ampliar el destino/rubro habilitado del local, dejando aclarado que no implica ceder el inmueble a terceros ni subalquilarlo. Conseguida esa autorización, recién ahí conviene activar el "Convenio de Colaboración — Ampliación de Rubro". Incluye al pie un bloque de <strong>conformidad para que el locador firme</strong>: si está de acuerdo, alcanza con que devuelva esta misma nota firmada — eso ya es la autorización expresa y por escrito que hace falta.</div></div>
+
+  <div class="aviso aviso-azul">📌 <div><strong>Orden recomendado:</strong> (1) entregar/enviar esta nota como carta simple o email, pidiendo la firma de conformidad al pie; (2) si no hay respuesta dentro del plazo o el locador se muestra reticente, recién ahí escalar a carta documento — pero incluso la CD solo deja constancia de que se pidió la autorización, no la reemplaza. El silencio del locador nunca equivale a autorización (art. 979 CCCN): sin conformidad firmada o respuesta expresa, no avancés con la actividad de streaming.</div></div>
 
   <div class="card">
     <h3>Locador (destinatario)</h3>
@@ -164,7 +166,7 @@ Dejo expresamente aclarado que dicha actividad se desarrollará dentro del propi
 
 Quedo a su disposición para suscribir, de así considerarlo Ud. conveniente, una adenda o addendum al CONTRATO que instrumente esta ampliación de destino, y para brindarle cualquier información adicional que estime necesaria a tal fin.
 
-Le solicito tenga a bien expedirse dentro de un plazo de ${plazo} días desde la recepción de la presente.
+Le solicito tenga a bien expedirse por escrito dentro de un plazo de ${plazo} días desde la recepción de la presente, dejando aclarado que el silencio no será interpretado como autorización.
 
 Sin otro particular, la/lo saludo atentamente.
 
@@ -172,7 +174,20 @@ Sin otro particular, la/lo saludo atentamente.
 _________________________
 ${tNombre}
 DNI/CUIT N° ${tDoc}
-Locataria`;
+Locataria
+
+
+— — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+
+CONFORMIDAD DEL LOCADOR
+
+Quien suscribe, ${lNombre}, en su carácter de locador/a del inmueble sito en ${inmueble}, PRESTA CONFORMIDAD con la ampliación de destino/rubro solicitada en la presente, autorizando expresamente a la locataria a destinar el inmueble también a la actividad indicada en el segundo párrafo, sin que ello implique modificación de ninguna otra cláusula del CONTRATO ni renuncia a derecho alguno no expresamente aquí contemplado.
+
+Lugar y fecha: _________________________
+
+Firma: _________________________
+Aclaración: ${lNombre}
+DNI/CUIT N°: _________________________`;
 
   document.getElementById('texto-resultado').textContent = texto;
 }
