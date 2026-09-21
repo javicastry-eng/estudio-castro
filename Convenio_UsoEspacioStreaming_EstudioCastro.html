@@ -72,6 +72,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;min-height:100vh
 
   <div class="aviso aviso-naranja">⚠️ <div><strong>Local alquilado, no propio.</strong> Si NONI-NONI es locataria (no dueña) del local y su contrato de locación prohíbe el subalquiler, este convenio NO debe redactarse ni ejecutarse como una cesión de uso a un tercero: eso puede ser recalificado judicialmente como sublocación encubierta (prevalece la realidad sobre el nombre que se le dé al contrato), habilitando al locador a resolver la locación y desalojar. Por eso el texto de abajo encuadra la actividad de streaming como una <u>ampliación del propio giro comercial de NONI-NONI</u> (no como uso cedido a un tercero) y condiciona su vigencia a la autorización escrita del locador para ampliar el destino/rubro habilitado. Usá también la herramienta "Nota de solicitud de ampliación de rubro" (archivo aparte) para pedir esa autorización antes de avanzar.</div></div>
 
+  <div class="aviso aviso-naranja">📄 <div><strong>Paso previo obligado: leer el contrato de locación real.</strong> Antes de completar este convenio, revisá en el contrato original: (1) la cláusula de <u>destino</u> — si dice "exclusivamente comercio" o "todo rubro comercial lícito" en términos amplios, la nueva actividad puede ya estar cubierta y ni haría falta pedir autorización; si en cambio limita el destino a un rubro específico (ej. "venta de colchones y afines"), sí hace falta la autorización de ampliación; (2) si el contrato enumera taxativamente los rubros autorizados o los deja abiertos; (3) la cláusula que prohíbe subalquiler/cesión, para citarla con precisión en la nota al locador. El resultado de esa lectura define si activás la condición suspensiva de la CLÁUSULA DÉCIMA tal cual está, o si alcanza con dejar la referencia solo a modo de resguardo documental.</div></div>
+
   <!-- DATOS -->
   <div class="grid2">
     <div class="card">
@@ -85,7 +87,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;min-height:100vh
       <div class="field"><label>Dirección del local (donde está EL ESPACIO)</label><input id="a-local" type="text" placeholder="Calle y número, localidad" oninput="actualizar()"/></div>
     </div>
     <div class="card">
-      <h3>Parte cesionaria — proyecto de streaming</h3>
+      <h3>Colaborador — a cargo del proyecto de streaming</h3>
       <div class="field"><label>Apellido y nombre / razón social</label><input id="b-nombre" type="text" placeholder="Nombre de la otra parte" oninput="actualizar()"/></div>
       <div class="field"><label>DNI / CUIT</label><input id="b-doc" type="text" placeholder="DNI o CUIT" oninput="actualizar()"/></div>
       <div class="field"><label>Domicilio</label><input id="b-dom" type="text" placeholder="Calle y número, localidad" oninput="actualizar()"/></div>
@@ -98,6 +100,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;min-height:100vh
       <div class="field"><label>Lugar de celebración</label><input id="lugar" type="text" placeholder="Ciudad" oninput="actualizar()"/></div>
       <div class="field"><label>Fecha</label><input type="date" id="fecha" onchange="actualizar()"/></div>
     </div>
+    <div class="field"><label>Nombre del proyecto / canal de streaming</label><input id="nombre-proyecto" type="text" placeholder="Ej.: nombre del canal o del proyecto" oninput="actualizar()"/></div>
     <div class="field"><label>Contraprestación en publicidad (detalle: menciones, cantidad, periodicidad, formato)</label>
       <textarea id="publicidad" oninput="actualizar()" placeholder="Ej.: mención de la marca NONI-NONI al inicio y cierre de cada transmisión, banner visible en cámara, publicación mensual en redes del proyecto, etc.">mención de la marca NONI-NONI al inicio y cierre de cada transmisión, exhibición de un banner/cartel de la marca dentro del espacio de streaming en cámara, y una publicación mensual en las redes sociales del proyecto</textarea>
     </div>
@@ -140,6 +143,7 @@ function actualizar(){
   const bNombre = gv('b-nombre') || '[NOMBRE OTRA PARTE]';
   const bDoc = gv('b-doc') || '[DNI/CUIT]';
   const bDom = gv('b-dom') || '[domicilio]';
+  const nombreProyecto = gv('nombre-proyecto') || '[NOMBRE DEL PROYECTO/CANAL]';
 
   const lugar = gv('lugar') || '[LUGAR]';
   const fecha = getFecha();
@@ -156,48 +160,51 @@ En ${lugar}, a ${fecha}, entre:
 
 POR UNA PARTE: ${aNombre}, DNI/CUIT N° ${aDoc}, con domicilio en ${aDom}, en su carácter de titular del fondo de comercio "${aFantasia}" (venta de colchones), sito en ${aLocal} (en adelante, "EL CEDENTE"); y
 
-POR LA OTRA PARTE: ${bNombre}, DNI/CUIT N° ${bDoc}, con domicilio en ${bDom} (en adelante, "EL PROYECTO"),
+POR LA OTRA PARTE: ${bNombre}, DNI/CUIT N° ${bDoc}, con domicilio en ${bDom} (en adelante, "EL COLABORADOR"),
 
-en conjunto "LAS PARTES", quienes acuerdan celebrar el presente convenio (en adelante, el "CONVENIO"), sujeto a las siguientes cláusulas:
+en conjunto "LAS PARTES", quienes, en el marco del proyecto de producción de contenido audiovisual y streaming denominado "${nombreProyecto}" (en adelante, "el Proyecto"), acuerdan celebrar el presente convenio (en adelante, el "CONVENIO"), sujeto a las siguientes cláusulas:
 
 PRIMERA — OBJETO.
-EL CEDENTE incorpora a su explotación comercial, como nueva línea o rubro de actividad, la producción de contenido audiovisual y transmisiones de streaming, a desarrollarse en un sector ubicado en la planta alta del local sito en ${aLocal} (en adelante, "EL ESPACIO"). A tal fin, EL CEDENTE habilita a EL PROYECTO a acceder a EL ESPACIO y colaborar en dicha actividad, en el carácter y con los alcances y limitaciones establecidos en la CLÁUSULA SEGUNDA, quedando prohibido todo destino distinto al aquí previsto sin autorización previa y por escrito de EL CEDENTE.
+EL CEDENTE incorpora a su explotación comercial, como nueva línea o rubro de actividad, la producción de contenido audiovisual y transmisiones de streaming, a desarrollarse en un sector ubicado en la planta alta del local sito en ${aLocal} (en adelante, "EL ESPACIO"). A tal fin, EL CEDENTE habilita a EL COLABORADOR a acceder a EL ESPACIO y colaborar en dicha actividad, en el carácter y con los alcances y limitaciones establecidos en la CLÁUSULA SEGUNDA, quedando prohibido todo destino distinto al aquí previsto sin autorización previa y por escrito de EL CEDENTE.
 
 SEGUNDA — NATURALEZA DEL VÍNCULO. AUSENCIA DE SUBLOCACIÓN Y DE CESIÓN.
-EL CEDENTE ocupa el inmueble donde se encuentra EL ESPACIO en su carácter de locataria, en virtud de un contrato de locación vigente con su locador, el cual prohíbe el subarriendo y la cesión total o parcial de la tenencia a terceros. En tal sentido, las partes declaran y acuerdan que el presente CONVENIO no importa sublocación, cesión de la locación ni cesión de uso en los términos de los arts. 1213 a 1216 del Código Civil y Comercial de la Nación, ni configura sociedad de hecho, irregular, civil ni comercial, relación de dependencia laboral, comunidad de bienes ni ningún otro vínculo asociativo entre las partes. La actividad de producción de contenido audiovisual y streaming a desarrollarse en EL ESPACIO constituye una ampliación del propio giro y rubro comercial de EL CEDENTE, quien conserva en todo momento la tenencia, posesión y control del inmueble, actuando EL PROYECTO exclusivamente como colaborador de EL CEDENTE en dicha actividad, sin que se le otorgue tenencia autónoma, exclusiva ni oponible a terceros sobre EL ESPACIO, ni facultad de explotarlo comercialmente a título propio e independiente.
+EL CEDENTE ocupa el inmueble donde se encuentra EL ESPACIO en su carácter de locataria, en virtud de un contrato de locación vigente con su locador, el cual prohíbe el subarriendo y la cesión total o parcial de la tenencia a terceros. En tal sentido, las partes declaran y acuerdan que el presente CONVENIO no importa sublocación, cesión de la locación ni cesión de uso en los términos de los arts. 1213 a 1216 del Código Civil y Comercial de la Nación, ni configura sociedad de hecho, irregular, civil ni comercial, relación de dependencia laboral, comunidad de bienes ni ningún otro vínculo asociativo entre las partes. La actividad de producción de contenido audiovisual y streaming a desarrollarse en EL ESPACIO constituye una ampliación del propio giro y rubro comercial de EL CEDENTE, quien conserva en todo momento la tenencia, posesión y control del inmueble, actuando EL COLABORADOR exclusivamente como colaborador de EL CEDENTE en dicha actividad, sin que se le otorgue tenencia autónoma, exclusiva ni oponible a terceros sobre EL ESPACIO, ni facultad de explotarlo comercialmente a título propio e independiente.
 
 TERCERA — CONTRAPRESTACIÓN.
-Como única contraprestación por el uso de EL ESPACIO, EL PROYECTO se obliga a otorgar a EL CEDENTE: ${publicidad}. No existe pago de suma de dinero alguna en concepto de canon, alquiler, arriendo ni similar.
+Como única contraprestación por el uso de EL ESPACIO, EL COLABORADOR se obliga a otorgar a EL CEDENTE: ${publicidad}. No existe pago de suma de dinero alguna en concepto de canon, alquiler, arriendo ni similar.
+
+TERCERA BIS — ROL DE EL CEDENTE COMO PRODUCTOR ASOCIADO / AUSPICIANTE.
+Sin perjuicio de lo establecido en la CLÁUSULA SEGUNDA, las partes acuerdan que EL CEDENTE podrá ser mencionado y presentado, dentro de las transmisiones, contenidos y piezas de comunicación de el Proyecto, con los títulos de "Productor Asociado" y/o "Auspiciante Oficial", en el marco y con el alcance de la contraprestación publicitaria detallada en la CLÁUSULA TERCERA. Dicho reconocimiento reviste carácter exclusivamente honorífico y publicitario, y en ningún caso implica que EL CEDENTE: (a) participe en la dirección editorial, artística, técnica ni en la gestión operativa de el Proyecto; (b) asuma la calidad de socio, coproductor con poder de decisión, ni ningún otro carácter asociativo respecto de el Proyecto o de EL COLABORADOR; (c) sea responsable, solidaria, mancomunada ni subsidiariamente, por las obligaciones, deudas o contingencias fiscales, laborales o de cualquier otra naturaleza que el Proyecto o EL COLABORADOR contraigan frente a terceros; ni (d) tenga derecho a percibir suma de dinero ni porcentaje alguno sobre los ingresos, resultados o rentabilidad de el Proyecto, salvo la contraprestación publicitaria pactada en la CLÁUSULA TERCERA, no existiendo entre las partes comunidad de ganancias ni de pérdidas en los términos de la Ley General de Sociedades N° 19.550. Toda participación económica adicional de EL CEDENTE en el Proyecto deberá pactarse por separado, por escrito y de manera expresa.
 
 CUARTA — PINTURA, MEJORAS, MOBILIARIO Y ACONDICIONAMIENTO.
-4.1. Todos los trabajos de pintura, refacción, acondicionamiento, decoración, instalación de mobiliario y equipamiento técnico, y cualquier otra mejora que EL PROYECTO decida realizar en EL ESPACIO (en adelante, las "MEJORAS") serán ejecutados exclusivamente por cuenta, cargo, costo y riesgo de EL PROYECTO, sin que EL CEDENTE deba efectuar erogación, inversión ni desembolso alguno.
-4.2. EL CEDENTE no será responsable por la calidad, idoneidad, seguridad ni legalidad de los trabajos realizados por EL PROYECTO o por terceros que este contrate, siendo EL PROYECTO el único responsable frente a dichos terceros y frente a cualquier organismo público o privado.
-4.3. Las MEJORAS que se incorporen a EL ESPACIO quedarán, en caso de rescisión, resolución, finalización o abandono del presente CONVENIO por cualquier causa, a beneficio del inmueble, sin que EL PROYECTO tenga derecho a reclamar a EL CEDENTE compensación, indemnización, reintegro ni pago alguno en concepto de mejoras útiles, necesarias, voluntarias ni de ningún otro tipo (arg. arts. 1934, 1938 y concordantes del Código Civil y Comercial de la Nación), renunciando EL PROYECTO expresa e irrevocablemente a todo derecho de retención sobre EL ESPACIO y a todo reclamo por mayor valor, plusvalía o enriquecimiento derivado de las MEJORAS.
-4.4. Si EL CEDENTE exigiera la restitución de EL ESPACIO en su estado original, EL PROYECTO afrontará por su exclusiva cuenta los costos de remoción y restitución, dentro del plazo que se le indique a tal efecto.
+4.1. Todos los trabajos de pintura, refacción, acondicionamiento, decoración, instalación de mobiliario y equipamiento técnico, y cualquier otra mejora que EL COLABORADOR decida realizar en EL ESPACIO (en adelante, las "MEJORAS") serán ejecutados exclusivamente por cuenta, cargo, costo y riesgo de EL COLABORADOR, sin que EL CEDENTE deba efectuar erogación, inversión ni desembolso alguno.
+4.2. EL CEDENTE no será responsable por la calidad, idoneidad, seguridad ni legalidad de los trabajos realizados por EL COLABORADOR o por terceros que este contrate, siendo EL COLABORADOR el único responsable frente a dichos terceros y frente a cualquier organismo público o privado.
+4.3. Las MEJORAS que se incorporen a EL ESPACIO quedarán, en caso de rescisión, resolución, finalización o abandono del presente CONVENIO por cualquier causa, a beneficio del inmueble, sin que EL COLABORADOR tenga derecho a reclamar a EL CEDENTE compensación, indemnización, reintegro ni pago alguno en concepto de mejoras útiles, necesarias, voluntarias ni de ningún otro tipo (arg. arts. 1934, 1938 y concordantes del Código Civil y Comercial de la Nación), renunciando EL COLABORADOR expresa e irrevocablemente a todo derecho de retención sobre EL ESPACIO y a todo reclamo por mayor valor, plusvalía o enriquecimiento derivado de las MEJORAS.
+4.4. Si EL CEDENTE exigiera la restitución de EL ESPACIO en su estado original, EL COLABORADOR afrontará por su exclusiva cuenta los costos de remoción y restitución, dentro del plazo que se le indique a tal efecto.
 
 QUINTA — RESCISIÓN, ABANDONO O INCUMPLIMIENTO.
 5.1. Cualquiera de las partes podrá rescindir el presente CONVENIO sin expresión de causa, mediante notificación fehaciente cursada a la otra con una antelación mínima de ${preaviso} días corridos.
-5.2. En caso de abandono, cese de actividad, desocupación de hecho o incumplimiento de EL PROYECTO, EL PROYECTO no tendrá derecho a reclamo, indemnización ni compensación alguna por las MEJORAS realizadas, publicidad no devengada, lucro cesante, pérdida de chance ni ningún otro concepto, sin perjuicio de las acciones que pudieran corresponder a EL CEDENTE.
-5.3. Ante el abandono o incumplimiento grave de EL PROYECTO, EL CEDENTE podrá retomar la posesión de EL ESPACIO, previa intimación fehaciente a EL PROYECTO para que retire los bienes muebles y elementos allí existentes en el plazo de ${retiro} días; transcurrido dicho plazo sin que se proceda al retiro, EL CEDENTE quedará facultado a disponer de ellos del modo que estime conveniente, sin responsabilidad de su parte.
+5.2. En caso de abandono, cese de actividad, desocupación de hecho o incumplimiento de EL COLABORADOR, EL COLABORADOR no tendrá derecho a reclamo, indemnización ni compensación alguna por las MEJORAS realizadas, publicidad no devengada, lucro cesante, pérdida de chance ni ningún otro concepto, sin perjuicio de las acciones que pudieran corresponder a EL CEDENTE.
+5.3. Ante el abandono o incumplimiento grave de EL COLABORADOR, EL CEDENTE podrá retomar la posesión de EL ESPACIO, previa intimación fehaciente a EL COLABORADOR para que retire los bienes muebles y elementos allí existentes en el plazo de ${retiro} días; transcurrido dicho plazo sin que se proceda al retiro, EL CEDENTE quedará facultado a disponer de ellos del modo que estime conveniente, sin responsabilidad de su parte.
 
 SEXTA — HABILITACIONES, PERMISOS Y CUMPLIMIENTO NORMATIVO.
-6.1. Será exclusiva responsabilidad de EL PROYECTO la obtención, tramitación, vigencia y costo de toda habilitación, permiso, inscripción o autorización municipal, provincial, nacional o de cualquier organismo de contralor necesaria para el desarrollo de la actividad de streaming/producción de contenido en EL ESPACIO, así como el cumplimiento de toda normativa de seguridad e higiene, bromatología (si correspondiere), propiedad intelectual, derechos de autor y de imagen, protección de datos personales y toda otra normativa aplicable a su actividad.
-6.2. EL CEDENTE no garantiza la aptitud de EL ESPACIO para la actividad de EL PROYECTO, siendo carga de este último verificar previamente dicha aptitud y las condiciones edilicias, de zonificación y habilitación del inmueble.
-6.3. EL PROYECTO mantendrá indemne a EL CEDENTE frente a toda multa, sanción, clausura o reclamo administrativo o judicial originado en la falta de habilitación, permiso o incumplimiento normativo relacionado con la actividad que EL PROYECTO desarrolle en EL ESPACIO.
+6.1. Será exclusiva responsabilidad de EL COLABORADOR la obtención, tramitación, vigencia y costo de toda habilitación, permiso, inscripción o autorización municipal, provincial, nacional o de cualquier organismo de contralor necesaria para el desarrollo de la actividad de streaming/producción de contenido en EL ESPACIO, así como el cumplimiento de toda normativa de seguridad e higiene, bromatología (si correspondiere), propiedad intelectual, derechos de autor y de imagen, protección de datos personales y toda otra normativa aplicable a su actividad.
+6.2. EL CEDENTE no garantiza la aptitud de EL ESPACIO para la actividad de EL COLABORADOR, siendo carga de este último verificar previamente dicha aptitud y las condiciones edilicias, de zonificación y habilitación del inmueble.
+6.3. EL COLABORADOR mantendrá indemne a EL CEDENTE frente a toda multa, sanción, clausura o reclamo administrativo o judicial originado en la falta de habilitación, permiso o incumplimiento normativo relacionado con la actividad que EL COLABORADOR desarrolle en EL ESPACIO.
 
 SÉPTIMA — INDEMNIDAD Y RESPONSABILIDAD FRENTE A TERCEROS.
-EL PROYECTO se obliga a mantener indemne a EL CEDENTE de todo reclamo, demanda o acción administrativa, judicial o extrajudicial que terceros —incluyendo, sin limitación, empleados, colaboradores, invitados, proveedores, organismos de contralor y/o el locador de EL CEDENTE— pudieran iniciar contra EL CEDENTE con motivo o en ocasión de la actividad desarrollada por EL PROYECTO en EL ESPACIO, incluyendo expresamente todo reclamo del locador fundado en un uso del inmueble distinto o adicional al destino habilitado, obligándose a contratar y mantener vigente, a su exclusivo cargo, un seguro de responsabilidad civil que cubra dichas contingencias, cuya póliza deberá exhibir a requerimiento de EL CEDENTE.
+EL COLABORADOR se obliga a mantener indemne a EL CEDENTE de todo reclamo, demanda o acción administrativa, judicial o extrajudicial que terceros —incluyendo, sin limitación, empleados, colaboradores, invitados, proveedores, organismos de contralor y/o el locador de EL CEDENTE— pudieran iniciar contra EL CEDENTE con motivo o en ocasión de la actividad desarrollada por EL COLABORADOR en EL ESPACIO, incluyendo expresamente todo reclamo del locador fundado en un uso del inmueble distinto o adicional al destino habilitado, obligándose a contratar y mantener vigente, a su exclusivo cargo, un seguro de responsabilidad civil que cubra dichas contingencias, cuya póliza deberá exhibir a requerimiento de EL CEDENTE.
 
 OCTAVA — AUSENCIA DE RELACIÓN LABORAL.
-El personal, colaboradores o terceros que EL PROYECTO afecte a la actividad en EL ESPACIO no tendrán vínculo laboral, de dependencia ni de ningún otro tipo con EL CEDENTE, siendo EL PROYECTO el único empleador y responsable de las obligaciones laborales, previsionales, sindicales, de ART y fiscales correspondientes, manteniendo indemne a EL CEDENTE por cualquier reclamo derivado de dicha relación.
+El personal, colaboradores o terceros que EL COLABORADOR afecte a la actividad en EL ESPACIO no tendrán vínculo laboral, de dependencia ni de ningún otro tipo con EL CEDENTE, siendo EL COLABORADOR el único empleador y responsable de las obligaciones laborales, previsionales, sindicales, de ART y fiscales correspondientes, manteniendo indemne a EL CEDENTE por cualquier reclamo derivado de dicha relación.
 
 NOVENA — SEGUROS.
-EL PROYECTO deberá contratar y mantener vigente, durante toda la vigencia del CONVENIO, seguro de responsabilidad civil y, en la medida en que su actividad pudiera generar dicho riesgo, cobertura contra incendio y demás riesgos que afecten EL ESPACIO y/o el resto del inmueble, incluido el local comercial de EL CEDENTE.
+EL COLABORADOR deberá contratar y mantener vigente, durante toda la vigencia del CONVENIO, seguro de responsabilidad civil y, en la medida en que su actividad pudiera generar dicho riesgo, cobertura contra incendio y demás riesgos que afecten EL ESPACIO y/o el resto del inmueble, incluido el local comercial de EL CEDENTE.
 
 DÉCIMA — CONDICIÓN SUSPENSIVA: AUTORIZACIÓN DEL LOCADOR.
 10.1. La vigencia y eficacia del presente CONVENIO queda sujeta a la condición suspensiva de que EL CEDENTE obtenga, en forma previa y por escrito, la autorización de su locador para ampliar el destino/rubro habilitado en el contrato de locación que la vincula, de modo de incluir la actividad prevista en la CLÁUSULA PRIMERA. Hasta tanto dicha autorización no sea obtenida, el presente CONVENIO no producirá efecto alguno entre las partes.
-10.2. Si el locador de EL CEDENTE denegara la autorización requerida, o la revocara u objetara en cualquier momento durante la vigencia del CONVENIO, EL CEDENTE podrá resolverlo de pleno derecho y en forma inmediata, sin responsabilidad ni obligación de indemnizar a EL PROYECTO por ningún concepto, aplicándose en tal caso lo dispuesto en la CLÁUSULA QUINTA.
-10.3. EL PROYECTO declara conocer que EL CEDENTE reviste el carácter de locataria del inmueble y que, en consecuencia, todo derecho que el presente CONVENIO le confiere queda subordinado a la subsistencia del contrato de locación entre EL CEDENTE y su locador, no pudiendo EL PROYECTO invocar frente a EL CEDENTE ni frente al locador derecho alguno de ocupación, tenencia o de tercero interesado.
+10.2. Si el locador de EL CEDENTE denegara la autorización requerida, o la revocara u objetara en cualquier momento durante la vigencia del CONVENIO, EL CEDENTE podrá resolverlo de pleno derecho y en forma inmediata, sin responsabilidad ni obligación de indemnizar a EL COLABORADOR por ningún concepto, aplicándose en tal caso lo dispuesto en la CLÁUSULA QUINTA.
+10.3. EL COLABORADOR declara conocer que EL CEDENTE reviste el carácter de locataria del inmueble y que, en consecuencia, todo derecho que el presente CONVENIO le confiere queda subordinado a la subsistencia del contrato de locación entre EL CEDENTE y su locador, no pudiendo EL COLABORADOR invocar frente a EL CEDENTE ni frente al locador derecho alguno de ocupación, tenencia o de tercero interesado.
 
 UNDÉCIMA — DOMICILIOS Y JURISDICCIÓN.
 Las partes constituyen domicilio en los indicados en el encabezamiento, donde se tendrán por válidas todas las notificaciones, y se someten a la jurisdicción de los Tribunales Ordinarios de ${jurisdiccion}, con renuncia a cualquier otro fuero que pudiera corresponderles.
@@ -207,7 +214,7 @@ En prueba de conformidad, se firman dos ejemplares de un mismo tenor y a un solo
 
 _________________________                    _________________________
 ${aNombre}                                    ${bNombre}
-EL CEDENTE                                    EL PROYECTO`;
+EL CEDENTE                                    EL COLABORADOR`;
 
   document.getElementById('texto-resultado').textContent = texto;
 }
@@ -223,7 +230,7 @@ function copiarTexto(){
 
 function limpiarTodo(){
   if (!confirm('¿Limpiar todos los datos del formulario?')) return;
-  ['a-nombre','a-doc','a-dom','a-local','b-nombre','b-doc','b-dom','lugar','jurisdiccion'].forEach(id => {
+  ['a-nombre','a-doc','a-dom','a-local','b-nombre','b-doc','b-dom','nombre-proyecto','lugar','jurisdiccion'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('a-fantasia').value = 'NONI-NONI';
