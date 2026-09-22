@@ -122,9 +122,37 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;min-height:100vh
     <button class="btn btn-red" onclick="limpiarTodo()">🗑 Limpiar formulario</button>
   </div>
 
+  <div id="borrador-estado" style="font-size:11px;color:#999;text-align:center;margin-top:-12px;margin-bottom:20px"></div>
+
 </div><!-- fin container -->
 
 <script>
+const CAMPOS = ['a-nombre','a-doc','a-fantasia','a-dom','a-local','b-nombre','b-doc','b-dom','nombre-proyecto','lugar','fecha','publicidad','preaviso','retiro','jurisdiccion'];
+const BORRADOR_KEY = 'convenio-noni-noni-streaming-draft';
+
+function guardarBorrador(){
+  try {
+    const datos = {};
+    CAMPOS.forEach(id => { datos[id] = document.getElementById(id).value; });
+    localStorage.setItem(BORRADOR_KEY, JSON.stringify(datos));
+    const est = document.getElementById('borrador-estado');
+    if (est) est.textContent = 'Borrador guardado automáticamente en este navegador — ' + new Date().toLocaleTimeString('es-AR');
+  } catch (e) { /* localStorage no disponible: se sigue usando el formulario sin autoguardado */ }
+}
+
+function cargarBorrador(){
+  try {
+    const raw = localStorage.getItem(BORRADOR_KEY);
+    if (!raw) return;
+    const datos = JSON.parse(raw);
+    CAMPOS.forEach(id => {
+      if (datos[id] !== undefined) document.getElementById(id).value = datos[id];
+    });
+    const est = document.getElementById('borrador-estado');
+    if (est) est.textContent = 'Se restauró el último borrador guardado en este navegador.';
+  } catch (e) { /* sin borrador previo o localStorage no disponible */ }
+}
+
 function gv(id){ return document.getElementById(id).value || ''; }
 
 function getFecha(){
@@ -219,6 +247,7 @@ ${aNombre}                                    ${bNombre}
 EL CEDENTE                                    EL COLABORADOR`;
 
   document.getElementById('texto-resultado').textContent = texto;
+  guardarBorrador();
 }
 
 function copiarTexto(){
@@ -231,7 +260,7 @@ function copiarTexto(){
 }
 
 function limpiarTodo(){
-  if (!confirm('¿Limpiar todos los datos del formulario?')) return;
+  if (!confirm('¿Limpiar todos los datos del formulario? También se borra el borrador guardado en este navegador.')) return;
   ['a-nombre','a-doc','a-dom','a-local','b-nombre','b-doc','b-dom','nombre-proyecto','lugar','jurisdiccion'].forEach(id => {
     document.getElementById(id).value = '';
   });
@@ -240,10 +269,12 @@ function limpiarTodo(){
   document.getElementById('preaviso').value = '30';
   document.getElementById('retiro').value = '10';
   document.getElementById('fecha').value = '';
+  try { localStorage.removeItem(BORRADOR_KEY); } catch (e) {}
   actualizar();
 }
 
-document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+cargarBorrador();
+if (!gv('fecha')) document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
 actualizar();
 </script>
 
