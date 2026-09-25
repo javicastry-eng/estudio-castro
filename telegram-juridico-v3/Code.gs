@@ -1990,19 +1990,29 @@ function cmdSync(chatId) {
 // para siempre. FIX: max_connections=1 fuerza a Telegram a entregar los
 // updates DE A UNO, esperando la respuesta anterior antes de mandar el
 // siguiente. Como doPost es liviano (~1s), no se nota en latencia.
+// ⚠️ 25/09/2026: NO CORRER — reliquia de la era webhook (pre v3.19).
+// Registrar un webhook es exactamente lo que causaba el 302/502 y los
+// documentos perdidos; por eso el bot pasó a modo polling. Se deja solo
+// para referencia/emergencia manual, nunca se llama desde ningún otro
+// lugar del código.
 function setWebhook() {
   Logger.log(UrlFetchApp.fetch(TELEGRAM_API + "/setWebhook?url=" + encodeURIComponent(CORRECT_WEBHOOK_URL) + "&drop_pending_updates=true&max_connections=1").getContentText());
 }
 function deleteWebhook() { Logger.log(UrlFetchApp.fetch(TELEGRAM_API + "/deleteWebhook?drop_pending_updates=true").getContentText()); }
 function getWebhookInfo() { Logger.log(UrlFetchApp.fetch(TELEGRAM_API + "/getWebhookInfo").getContentText()); }
 
+// v3.20.1 (25/09/2026): BUG DE RAÍZ encontrado — nuclearReset() todavía
+// terminaba llamando a setWebhook(), volviendo a registrar el webhook que
+// causaba el 302/502 (el mismo mecanismo raíz que motivó pasar a polling
+// en v3.19). Si se corría por costumbre de sesiones viejas (cuando era el
+// botón de "arreglar todo"), revertía el bot al modo roto en silencio —
+// pasó justo eso el 24-25/09. Ahora solo borra el webhook y resetea el
+// offset de polling, sin volver a registrar nada.
 function nuclearReset() {
-  var del = UrlFetchApp.fetch(TELEGRAM_API + "/deleteWebhook?drop_pending_updates=true");
-  Logger.log("Delete: " + del.getContentText());
-  CacheService.getScriptCache().removeAll(["lastUpdateId"]);
-  Utilities.sleep(2000);
-  var set = UrlFetchApp.fetch(TELEGRAM_API + "/setWebhook?url=" + encodeURIComponent(CORRECT_WEBHOOK_URL) + "&drop_pending_updates=true&max_connections=1");
-  Logger.log("Set: " + set.getContentText());
+  var del = UrlFetchApp.fetch(TELEGRAM_API + "/deleteWebhook?drop_pending_updates=true", { muteHttpExceptions: true });
+  Logger.log("nuclearReset: webhook borrado — " + del.getContentText());
+  PROPS.deleteProperty(TELEGRAM_UPDATE_OFFSET_PROP);
+  Logger.log("nuclearReset: offset de polling reseteado — el próximo dispatchColas arranca limpio.");
 }
 
 function limpiarCache() { CacheService.getScriptCache().remove("pending_update"); Logger.log("Cache limpiado"); }
