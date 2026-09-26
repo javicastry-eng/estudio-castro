@@ -202,11 +202,11 @@ const BOT_TOKEN = PROPS.getProperty("BOT_TOKEN");
 const TELEGRAM_API = "https://api.telegram.org/bot" + BOT_TOKEN;
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_KEY = PROPS.getProperty("ANTHROPIC_KEY");
-const SB_URL = "https://nqwybjfrsnqpgdaecubg.supabase.co";
+const SB_URL = "xxxx";
 const SB_KEY = PROPS.getProperty("SB_KEY");
-const DRIVE_ROOT = "1IfPreFIXWtSNsgpxRYjqot6KjoQQhBAJ";
+const DRIVE_ROOT = "xxxx";
 const INBOX_NAME = "INBOX-TELEGRAM";
-const CORRECT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyLHjfsnEflasjEaqkZDWOQeA8V8IsNVU760Q8-oSu8RrLbYqI25vBMp5iZRzg7LwtktQ/exec";
+const CORRECT_WEBHOOK_URL = "xxxx";
 const VOYAGE_KEY = PROPS.getProperty("VOYAGE_KEY");
 const VOYAGE_API = "https://api.voyageai.com/v1/embeddings";
 function verificarPropiedades() {

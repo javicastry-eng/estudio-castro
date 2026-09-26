@@ -1,0 +1,7 @@
+graphify-out/
+.clasp.json
+
+# Archivos de trabajo locales (el repo es público)
+.claude/
+CLAUDE.md
+GRAFO.md

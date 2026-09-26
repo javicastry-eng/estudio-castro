@@ -172,3 +172,4 @@ function crearTriggerSyncCausas() {
   ScriptApp.newTrigger("syncCausasNotionASupabase").timeBased().everyHours(6).create();
   Logger.log("✅ Trigger de syncCausasNotionASupabase creado (cada 6 horas).");
 }
+

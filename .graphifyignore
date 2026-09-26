@@ -1,0 +1,23 @@
+# Secretos y variables de entorno
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+
+# Archivos de credenciales
+*credential*
+*credentials*
+*secret*
+*secrets*
+*token*
+service-account*.json
+client_secret*.json
+
+# Dependencias
+node_modules/
+
+# Documentación de herramientas (no es contenido del proyecto)
+.claude/skills/
